@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Search, Settings2, MessageCircle, Mail, Bell, LogOut, User, LogOutIcon } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, Settings2, MessageCircle, Mail, Bell, User, LogOutIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Package, DollarSign, Ticket, CalendarDays } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Load, Alert } from "../types";

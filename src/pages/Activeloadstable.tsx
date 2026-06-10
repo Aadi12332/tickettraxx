@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, GripHorizontal, MoreVertical } from "lucide-react";
+import { Filter, MoreVertical } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { TicketApprovalModal } from "./TicketApprovalModal";
@@ -146,7 +146,6 @@ function FilterDropdown({
 
 
 function ActionsMenu({
-  loadId,
   status,
 }: {
   loadId: number;

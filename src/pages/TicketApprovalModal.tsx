@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, X, CheckCheckIcon, CheckCircle2 } from "lucide-react";
+import { CheckCircle, XCircle, X } from "lucide-react";
 
 export function TicketApprovalModal({
   open,

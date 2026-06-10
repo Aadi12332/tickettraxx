@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import LoginBg from "../../assets/images/login-bg.png";
 
 interface AuthLayoutProps {

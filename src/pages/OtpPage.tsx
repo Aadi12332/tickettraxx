@@ -20,6 +20,7 @@ export const OtpPage = () => {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
   const { resetPasswordEmail } = useAuth();
   const navigate = useNavigate();
+  console.log(resendTimer);
 
   useEffect(() => {
     if (!resetPasswordEmail) navigate("/forgot-password");
@@ -73,12 +74,12 @@ export const OtpPage = () => {
     navigate("/reset-password");
   };
 
-  const handleResend = async () => {
-    if (resendTimer > 0) return;
-    setResendTimer(30);
-    setOtp(Array(OTP_LENGTH).fill(""));
-    inputs.current[0]?.focus();
-  };
+  // const handleResend = async () => {
+  //   if (resendTimer > 0) return;
+  //   setResendTimer(30);
+  //   setOtp(Array(OTP_LENGTH).fill(""));
+  //   inputs.current[0]?.focus();
+  // };
 
   return (
     <AuthLayout>
