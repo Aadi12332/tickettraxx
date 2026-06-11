@@ -59,3 +59,22 @@
   .scroll-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .rdp-range_start .rdp-day_button,
+  .rdp-range_end .rdp-day_button{
+    background-color: #315497 !important;
+  }
+
+  .rdp-day_button{
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .rdp-selected .rdp-day_button{
+    border: none !important;
+  }
+
+  .rdp-today:not(.rdp-outside){
+    color: #315497 !important;
+    font-weight: 700 !important;
+  }

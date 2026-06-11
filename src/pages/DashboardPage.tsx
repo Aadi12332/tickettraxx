@@ -9,6 +9,10 @@ import GraphIcon from "../assets/images/graph-icon.svg";
 import AlertCircle from "../assets/images/alert-circle.svg";
 import ActiveLoadsTable from "./Activeloadstable";
 import { LiveTrackingModal } from "./LiveTrackingModal";
+import DateRangeModal from "./DateRangeModal";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const statCards = [
   {
@@ -120,31 +124,59 @@ const alerts: Alert[] = [
 export const DashboardPage = () => {
   const { user } = useAuth();
   const [selectedLoad, setSelectedLoad] = useState<any>(null);
-  const today = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-  const weekLater = new Date(Date.now() + 6 * 86400000).toLocaleDateString(
-    "en-GB",
-    { day: "2-digit", month: "2-digit", year: "numeric" },
-  );
+  const [openDateModal, setOpenDateModal] = useState(false);
+  const [range, setRange] = useState<DateRange | undefined>();
+  const navigate = useNavigate();
+
+  const rows = [
+    {
+      label: "Due This Friday:",
+      value: "$148,320.75",
+      valueClass: "text-[#111827] font-bold text-lg",
+      onClick: () => navigate("/dashboard/payments"),
+    },
+    {
+      label: "Unsettled Tickets",
+      value: "134",
+      suffix: "active",
+      valueClass: "font-bold text-[#111827] text-base",
+      onClick: () => navigate("/dashboard/tickets"),
+    },
+    {
+      label: "Invoiced Amount",
+      value: "$76,523.00",
+      valueClass: "font-bold text-[#1D3461] text-lg",
+      onClick: () => {},
+    },
+  ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-[24px] font-bold text-[#111827]">
           Contractor Dashboard
         </h1>
-        <div className="flex items-center gap-2 text-sm text-[#111827] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2">
-          <CalendarDays size={20} className="text-[#111827]" />
+        <div
+          onClick={() => setOpenDateModal(true)}
+          className="flex items-center gap-2 text-sm text-[#111827] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 cursor-pointer"
+        >
+          <CalendarDays size={20} />
           <span>
-            {today.replace(/\//g, "/")} - {weekLater.replace(/\//g, "/")}
+            {range?.from ? format(range.from, "dd/MM/yyyy") : "Start Date"}
+            {" - "}
+            {range?.to ? format(range.to, "dd/MM/yyyy") : "End Date"}
           </span>
         </div>
       </div>
 
-      <div className="relative flex flex-col justify-center items-start rounded-lg bg-gradient-to-r from-[#2C54A4] to-[#0C224C] min-h-[136px] lg:p-10 p-5 text-white">
+      <DateRangeModal
+        open={openDateModal}
+        onClose={() => setOpenDateModal(false)}
+        value={range}
+        onChange={setRange}
+      />
+
+      <div className="relative z-0 flex flex-col justify-center items-start overflow-hidden rounded-lg bg-gradient-to-r from-[#2C54A4] to-[#0C224C] min-h-[136px] lg:p-10 p-5 text-white">
         <div className="relative z-10">
           <h2 className="text-[24px] font-bold">
             Welcome Back, {user?.name ?? "Adrian"}
@@ -223,7 +255,7 @@ export const DashboardPage = () => {
                   <tr
                     key={load.id}
                     onClick={() => setSelectedLoad(load)}
-                    className="hover:bg-gray-50/50 transition-colors"
+                    className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   >
                     <td className="px-5 py-3 text-[#111827] font-medium">
                       {load.ticketId}
@@ -261,9 +293,9 @@ export const DashboardPage = () => {
         </div>
 
         <LiveTrackingModal
-  load={selectedLoad}
-  onClose={() => setSelectedLoad(null)}
-/>
+          load={selectedLoad}
+          onClose={() => setSelectedLoad(null)}
+        />
 
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4">
@@ -335,33 +367,19 @@ export const DashboardPage = () => {
               </button>
             </div>
             <div className="divide-y divide-[#B3B3B3] px-5">
-              {[
-                {
-                  label: "Due This Friday:",
-                  value: "$148,320.75",
-                  valueClass: "text-[#111827] font-bold text-lg",
-                },
-                {
-                  label: "Unsettled Tickets",
-                  value: "134",
-                  suffix: "active",
-                  valueClass: "font-bold text-[#111827] text-base",
-                },
-                {
-                  label: "Invoiced Amount",
-                  value: "$76,523.00",
-                  valueClass: "font-bold text-[#1D3461] text-lg",
-                },
-              ].map((row) => (
+              {rows.map((row) => (
                 <div
                   key={row.label}
-                  className="flex items-center justify-between py-3"
+                  onClick={row.onClick}
+                  className="flex items-center justify-between py-3 cursor-pointer"
                 >
-                  <span className={`text-sm font-semibold text-[#111827]`}>
+                  <span className="text-sm font-semibold text-[#111827]">
                     {row.label}
                   </span>
+
                   <span className={`text-[20px] ${row.valueClass}`}>
                     {row.value}
+
                     {row.suffix && (
                       <span className="text-gray-400 text-sm font-normal ml-1">
                         {row.suffix}

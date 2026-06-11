@@ -44,7 +44,7 @@ export function NotDeliveredModal({
               delivery issue.
             </p>
 
-            <button className="bg-[#1F4A92] text-white px-3 py-3 rounded-lg">
+            <button onClick={onClose} className="bg-[#1F4A92] text-white px-3 py-3 rounded-lg">
               Request Admin For Ticket
             </button>
           </div>
