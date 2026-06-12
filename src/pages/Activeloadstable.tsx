@@ -151,7 +151,6 @@ function ActionsMenu({
   loadId: number;
   status: Status;
 }) {
-//   const [open, setOpen] = useState(false);
   const [showDeliveredModal, setShowDeliveredModal] = useState(false);
   const [showCancelledModal, setShowCancelledModal] = useState(false);
 

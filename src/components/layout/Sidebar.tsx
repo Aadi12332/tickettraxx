@@ -135,7 +135,7 @@ export const Sidebar = () => {
                             px-3
                             py-3
                             border
-                            ${isActive ? "bg-[#3A3A3A] text-white border-[#FFFFFF80]" : "text-[#181818] border-transparent"}
+                            ${isActive ? "!bg-[#3A3A3A] text-white border-[#FFFFFF80]" : "text-[#181818] border-transparent"}
                           `
                           }
                         >

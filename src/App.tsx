@@ -11,6 +11,11 @@ import { PlaceholderPage } from "./pages/PlaceholderPage";
 import {AssignLoadPage} from "./pages/AssignLoadPage";
 import PermissionsPage from "./pages/PermissionPage";
 import CreateNewRole from "./pages/CreateNewRole";
+import DeductionPage from "./pages/DeductionPage";
+import StatementPage from "./pages/StatementPage";
+import UpcomingPaymentPage from "./pages/UpcomingPaymentPage";
+import UploadTicketPage from "./pages/UploadTicketPage";
+import TicketStatusPage from "./pages/TicketStatusPage";
 
 export const App = () => {
 
@@ -51,27 +56,27 @@ export const App = () => {
 
               <Route
                 path="/dashboard/upload-tickets"
-                element={<PlaceholderPage title="Upload Tickets" />}
+                element={<UploadTicketPage />}
               />
 
               <Route
                 path="/dashboard/tickets"
-                element={<PlaceholderPage title="Ticket Status" />}
+                element={<TicketStatusPage />}
               />
 
               <Route
                 path="/dashboard/payments"
-                element={<PlaceholderPage title="Upcoming Payment" />}
+                element={<UpcomingPaymentPage />}
               />
 
               <Route
                 path="/dashboard/statement"
-                element={<PlaceholderPage title="Statement" />}
+                element={<StatementPage />}
               />
 
               <Route
                 path="/dashboard/deductions"
-                element={<PlaceholderPage title="Deductions" />}
+                element={<DeductionPage />}
               />
 
               <Route
