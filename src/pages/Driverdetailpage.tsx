@@ -18,15 +18,6 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-interface PaymentRow {
-  id: number;
-  jobId: string;
-  date: string;
-  tickets: number;
-  deduction: string;
-  status: "Paid" | "Pending";
-}
-
 interface TicketRow {
   id: number;
   ticketNo: string;

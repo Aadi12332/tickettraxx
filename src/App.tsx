@@ -7,7 +7,6 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { OtpPage } from "./pages/OtpPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
 import {AssignLoadPage} from "./pages/AssignLoadPage";
 import PermissionsPage from "./pages/PermissionPage";
 import CreateNewRole from "./pages/CreateNewRole";

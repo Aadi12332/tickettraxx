@@ -11,7 +11,6 @@ import {
   Search,
   X,
   Check,
-  MoreVertical,
   Eye,
   Edit,
   Smile,

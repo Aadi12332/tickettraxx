@@ -237,6 +237,7 @@ function ActionsMenu({ rowId }: { rowId: number }) {
   const [payPercentage, setPayPercentage] = useState("");
   const [successTitle, setSuccessTitle] = useState("");
   const navigate = useNavigate();
+  console.log(rowId);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
