@@ -24,7 +24,7 @@ export interface UploadedFile {
 }
 
 
-function TicketPreviewModal({
+export function TicketPreviewModal({
   file,
   onClose,
 }: {

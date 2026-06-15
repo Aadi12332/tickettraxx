@@ -16,6 +16,11 @@ import StatementPage from "./pages/StatementPage";
 import UpcomingPaymentPage from "./pages/UpcomingPaymentPage";
 import UploadTicketPage from "./pages/UploadTicketPage";
 import TicketStatusPage from "./pages/TicketStatusPage";
+import AllDriversPage from "./pages/Alldriverspage";
+import ActiveLoadsPage from "./pages/Activeloadspage";
+import TruckDetailsPage from "./pages/Truckdetailspage";
+import AddDriver from "./pages/AddDriver";
+import DriverDetailPage from "./pages/Driverdetailpage";
 
 export const App = () => {
 
@@ -41,17 +46,27 @@ export const App = () => {
 
               <Route
                 path="/dashboard/drivers"
-                element={<PlaceholderPage title="Drivers" />}
+                element={<AllDriversPage />}
+              />
+
+              <Route
+                path="/dashboard/drivers/details"
+                element={<DriverDetailPage />}
+              />
+
+              <Route
+                path="/dashboard/drivers/add-driver"
+                element={<AddDriver />}
               />
 
               <Route
                 path="/dashboard/active-loads"
-                element={<PlaceholderPage title="Active Loads" />}
+                element={<ActiveLoadsPage />}
               />
 
               <Route
                 path="/dashboard/trucks"
-                element={<PlaceholderPage title="Truck Details" />}
+                element={<TruckDetailsPage />}
               />
 
               <Route

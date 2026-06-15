@@ -3,6 +3,7 @@
 import { RefreshCw } from "lucide-react";
 import UploadedFilesSection, { UploadedFile } from "./UploadedFilesSection";
 import { useState } from "react";
+import TicketStatusTable from "./TicketStatusTable";
 
 const INITIAL_FILES: UploadedFile[] = [
   {
@@ -50,6 +51,8 @@ export default function TicketStatusPage() {
       </div>
 
       <UploadedFilesSection files={uploadedFiles} onDelete={handleDelete} />
+
+      <TicketStatusTable />
     </div>
   );
 }
