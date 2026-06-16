@@ -64,7 +64,7 @@ function SortIcon({ dir }: { dir: SortDir }) {
 }
 
 
-function FilterDropdown({
+export function FilterDropdown({
   selected,
   onChange,
 }: {
@@ -264,11 +264,11 @@ export default function ActiveLoadsTable() {
 
   return (
     <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden px-6">
-      <div className="flex items-center justify-between py-4">
+      <div className="flex items-center justify-between py-4 gap-3 flex-wrap">
         <h2 className="text-base font-semibold text-[#111827]">Active Loads</h2>
         <div className="flex items-center gap-3">
           <FilterDropdown selected={filterStatuses} onChange={setFilterStatuses} />
-          <button onClick={()=>navigate("/dashboard/drivers")} className="px-4 py-2 text-sm font-medium text-[#111827] border border-[#C8C8C8] rounded-lg bg-white hover:bg-gray-50 transition-colors">
+          <button onClick={()=>navigate("/dashboard/active-loads")} className="px-4 py-2 text-sm font-medium text-[#111827] border border-[#C8C8C8] rounded-lg bg-white hover:bg-gray-50 transition-colors">
             View All
           </button>
         </div>

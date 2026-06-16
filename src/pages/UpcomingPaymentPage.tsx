@@ -238,10 +238,10 @@ const INITIAL_DATA: StatementRow[] = [
 const SHOW_OPTIONS = [5, 10, 20, 50];
 
 const SORT_OPTIONS = [
-  "Date (Earliest)",
-  "Date (Latest)",
-  "Amount (Highest First)",
-  "Amount (Lowest First)",
+  "Settlement Week(Earliest)",
+  "Settlement Week(Latest)",
+  "Net Paid (highest first)",
+  "Net Paid (Lowest first)",
 ] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 
@@ -332,7 +332,7 @@ export function SortDropdown({
         <ChevronDown size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
+        <div className="absolute sm:right-0 left-0 sm:left-[unset] top-full mt-1 w-52 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt}
@@ -717,7 +717,7 @@ export default function UpcomingPaymentPage() {
 
   return (
     <div className="bg-[#F3F4F6]">
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">Upcoming Payment</h1>
           <p className="text-sm text-[#707070] mt-0.5">
@@ -738,7 +738,7 @@ export default function UpcomingPaymentPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 mb-5">
+      <div className="grid xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4 mb-5">
         <StatCard
           icon={<Users size={15} className="text-[#1D3461]" />}
           label="Expected this Friday"
@@ -769,7 +769,7 @@ export default function UpcomingPaymentPage() {
         />
       </div>
 
-      <div className="bg-white rounded-xl border border-[#E5E7EB] px-5 py-4 mb-5 flex items-end gap-3">
+      <div className="bg-white rounded-xl border border-[#E5E7EB] px-5 py-4 mb-5 grid xl:grid-cols-5 sm:grid-cols-2 grid-cols-1 gap-4 items-end gap-3">
         <div className="flex flex-col gap-1 flex-1">
           <label className="text-xs text-[#6B7280]">Pay Period</label>
           <div className="relative">
@@ -796,15 +796,11 @@ export default function UpcomingPaymentPage() {
           <label className="text-xs text-[#6B7280]">Start date</label>
           <div className="relative">
             <input
-              type="text"
+              type="date"
               placeholder="mm/dd/yyyy"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] outline-none bg-white pr-9"
-            />
-            <Calendar
-              size={14}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none"
+              className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] outline-none bg-white"
             />
           </div>
         </div>
@@ -813,15 +809,11 @@ export default function UpcomingPaymentPage() {
           <label className="text-xs text-[#6B7280]">End date</label>
           <div className="relative">
             <input
-              type="text"
+              type="date"
               placeholder="mm/dd/yyyy"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] outline-none bg-white pr-9"
-            />
-            <Calendar
-              size={14}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none"
+              className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] outline-none bg-white"
             />
           </div>
         </div>
@@ -854,8 +846,8 @@ export default function UpcomingPaymentPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E5E7EB]">
-          <div className="flex items-center gap-3">
+        <div className="flex sm:items-center gap-3 flex-col sm:flex-row justify-between px-5 py-3.5 border-b border-[#E5E7EB]">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 px-3 py-1.5 text-sm border border-[#E5E7EB] rounded-lg cursor-pointer">
               <input
                 type="checkbox"

@@ -4,7 +4,6 @@ import { ArrowLeft, Upload, ImageIcon } from "lucide-react";
 import { useState, useRef, DragEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 interface FormState {
   name: string;
   state: string;
@@ -32,16 +31,32 @@ interface FormErrors {
   routingNumber?: string;
 }
 
-
-const STATE_OPTIONS   = ["Texas", "California", "Florida", "New York", "Illinois"];
-const CITY_OPTIONS    = ["Houston", "Dallas", "Austin", "San Antonio", "El Paso"];
-const ACCESS_OPTIONS  = ["Enable", "Disable"];
-const TRUCK_OPTIONS   = ["TX4578", "TX5682", "TX6820", "TX5973", "TX6891"];
-const PAYMENT_TYPES   = ["Per Trip", "Per Ton", "Per Mile"];
-const RATE_OPTIONS    = ["$80/trip", "$90/trip", "$100/trip", "$110trip", "Enter Manually"];
-const BANK_OPTIONS    = ["Bank of America", "Wells Fargo", "Citi Bank", "U.S. Bank", "Bank of New York"];
+const STATE_OPTIONS = [
+  "Texas",
+  "California",
+  "Florida",
+  "New York",
+  "Illinois",
+];
+const CITY_OPTIONS = ["Houston", "Dallas", "Austin", "San Antonio", "El Paso"];
+const ACCESS_OPTIONS = ["Enable", "Disable"];
+const TRUCK_OPTIONS = ["TX4578", "TX5682", "TX6820", "TX5973", "TX6891"];
+const PAYMENT_TYPES = ["Per Trip", "Per Ton", "Per Mile"];
+const RATE_OPTIONS = [
+  "$80/trip",
+  "$90/trip",
+  "$100/trip",
+  "$110trip",
+  "Enter Manually",
+];
+const BANK_OPTIONS = [
+  "Bank of America",
+  "Wells Fargo",
+  "Citi Bank",
+  "U.S. Bank",
+  "Bank of New York",
+];
 const PAYMENT_METHODS = ["Bank Transfer", "Cheque", "Pay Pal"];
-
 
 function TextInput({
   label,
@@ -60,9 +75,7 @@ function TextInput({
 }) {
   return (
     <div className="relative flex flex-col">
-            <label className="px-1 text-[12px] text-[#6B7280] z-10">
-        {label}
-      </label>
+      <label className="px-1 text-[12px] text-[#6B7280] z-10">{label}</label>
       <input
         type={type}
         placeholder={!label ? placeholder : ""}
@@ -92,9 +105,7 @@ function SelectInput({
 }) {
   return (
     <div className="relative flex flex-col">
-      <label className="px-1 text-[12px] text-[#6B7280] z-10">
-        {label}
-      </label>
+      <label className="px-1 text-[12px] text-[#6B7280] z-10">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -102,21 +113,30 @@ function SelectInput({
           ${value ? "text-[#111827]" : "text-[#9CA3AF]"}
           ${error ? "border-red-400" : "border-[#D1D5DB]"}`}
       >
-        <option value="" disabled>Select one</option>
+        <option value="" disabled>
+          Select one
+        </option>
         {options.map((opt) => (
-          <option key={opt} value={opt}>{opt}</option>
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
         ))}
       </select>
       <span className="pointer-events-none absolute right-3 top-[35px] text-[#9CA3AF]">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M4 6l4 4 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </span>
       {error && <p className="text-xs text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }
-
 
 function ImageUploadBox({
   label,
@@ -145,46 +165,56 @@ function ImageUploadBox({
   }
 
   return (
-    <div className="grid grid-cols-3 gap-6 items-start">
-      <div className="col-span-2">
+    <div className="grid md:grid-cols-3 grid-cols-1 gap-6 items-start">
+      <div className="md:col-span-2">
         <p className="text-[13px] font-semibold text-[#111827] mb-3">{label}</p>
-        <div className={`border-2 border-dashed h-[250px] p-3 rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer
-            ${dragging ? "border-[#1D3461]" : "border-[#838383]"}`}>
-            <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-          className={`h-full w-full rounded-lg flex flex-col items-center justify-center py-10 px-4 transition-colors cursor-pointer
-            ${dragging ? "bg-blue-50" : "bg-[#F2F2F7]"}`}
-          onClick={() => inputRef.current?.click()}
+        <div
+          className={`border-2 border-dashed h-[250px] p-3 rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer
+            ${dragging ? "border-[#1D3461]" : "border-[#838383]"}`}
         >
-          <div className="w-12 h-12 flex items-center justify-center text-[#9CA3AF] mb-3">
-            <ImageIcon size={40} strokeWidth={1} />
-          </div>
-          <p className="text-[13px] text-[#6B7280]">Drag the picture</p>
-          <p className="text-[13px] text-[#6B7280] mb-4">or</p>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-            className="flex items-center gap-2 px-4 py-2 text-[12px] text-[#374151] bg-[#D4D4D4] shadow-xl border border-[#D1D5DB] rounded-md hover:bg-gray-50 transition-colors"
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+            className={`h-full w-full rounded-lg flex flex-col items-center justify-center py-10 px-4 transition-colors cursor-pointer
+            ${dragging ? "bg-blue-50" : "bg-[#F2F2F7]"}`}
+            onClick={() => inputRef.current?.click()}
           >
-            <Upload size={13} />
-            Upload Image
-          </button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileInput}
-          />
-        </div>
+            <div className="w-12 h-12 flex items-center justify-center text-[#9CA3AF] mb-3">
+              <ImageIcon size={40} strokeWidth={1} />
+            </div>
+            <p className="text-[13px] text-[#6B7280]">Drag the picture</p>
+            <p className="text-[13px] text-[#6B7280] mb-4">or</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                inputRef.current?.click();
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-[12px] text-[#374151] bg-[#D4D4D4] shadow-xl border border-[#D1D5DB] rounded-md hover:bg-gray-50 transition-colors"
+            >
+              <Upload size={13} />
+              Upload Image
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileInput}
+            />
+          </div>
         </div>
       </div>
 
-      <div>
-        <p className="text-[13px] font-semibold text-[#111827] mb-3">{previewLabel}</p>
-        <div className="border border-[#E5E7EB] rounded-lg overflow-hidden min-h-[250px] bg-[#F2F2F7] flex items-center justify-center">
+      <div className="w-full">
+        <p className="text-[13px] font-semibold text-[#111827] mb-3">
+          {previewLabel}
+        </p>
+        <div className="border w-full border-[#E5E7EB] rounded-lg overflow-hidden min-h-[250px] bg-[#F2F2F7] flex items-center justify-center">
           {preview ? (
             <img
               src={preview}
@@ -200,18 +230,24 @@ function ImageUploadBox({
   );
 }
 
-
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="mb-5">
-      <h2 className="text-[15px] font-bold text-[#111827] px-1 mb-3">{title}</h2>
+      <h2 className="text-[15px] font-bold text-[#111827] px-1 mb-3">
+        {title}
+      </h2>
       <div className="bg-white rounded-xl border border-[#E5E7EB] p-5">
         {children}
       </div>
     </div>
   );
 }
-
 
 export default function AddDriver() {
   const navigate = useNavigate();
@@ -235,7 +271,7 @@ export default function AddDriver() {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [cdlPreview, setCdlPreview]         = useState<string | null>(null);
+  const [cdlPreview, setCdlPreview] = useState<string | null>(null);
   const [medicalPreview, setMedicalPreview] = useState<string | null>(null);
 
   function setField(key: keyof FormState) {
@@ -255,14 +291,16 @@ export default function AddDriver() {
 
   function validate(): boolean {
     const errs: FormErrors = {};
-    if (!form.name.trim())          errs.name          = "Name is required.";
-    if (!form.email.trim())         errs.email         = "Email is required.";
+    if (!form.name.trim()) errs.name = "Name is required.";
+    if (!form.email.trim()) errs.email = "Email is required.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-                                    errs.email         = "Enter a valid email.";
-    if (!form.phone.trim())         errs.phone         = "Phone is required.";
-    if (!form.password)             errs.password      = "Password is required.";
-    if (!form.accountNumber.trim()) errs.accountNumber = "Account number is required.";
-    if (!form.routingNumber.trim()) errs.routingNumber = "Routing number is required.";
+      errs.email = "Enter a valid email.";
+    if (!form.phone.trim()) errs.phone = "Phone is required.";
+    if (!form.password) errs.password = "Password is required.";
+    if (!form.accountNumber.trim())
+      errs.accountNumber = "Account number is required.";
+    if (!form.routingNumber.trim())
+      errs.routingNumber = "Routing number is required.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -275,8 +313,7 @@ export default function AddDriver() {
 
   return (
     <div className="bg-[#F3F4F6]">
-
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center flex-wrap gap-4 mb-6">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors whitespace-nowrap"
@@ -293,9 +330,9 @@ export default function AddDriver() {
       </div>
 
       <SectionCard title="Basic Information">
-        <div className="grid grid-cols-4 gap-4 mb-4">
+        <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-4">
           <TextInput
-          label="Name"
+            label="Name"
             placeholder="Name"
             value={form.name}
             onChange={setField("name")}
@@ -314,22 +351,22 @@ export default function AddDriver() {
             options={CITY_OPTIONS}
           />
           <TextInput
-          label="Address"
+            label="Address"
             placeholder="Address"
             value={form.address}
             onChange={setField("address")}
           />
         </div>
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4">
           <TextInput
-          label="Phone Number"
+            label="Phone Number"
             placeholder="Phone"
             value={form.phone}
             onChange={setField("phone")}
             error={errors.phone}
           />
           <TextInput
-          label="Email Address"
+            label="Email Address"
             placeholder="Email"
             type="email"
             value={form.email}
@@ -343,7 +380,7 @@ export default function AddDriver() {
             options={ACCESS_OPTIONS}
           />
           <TextInput
-          label="Password"
+            label="Password"
             placeholder="Password"
             type="password"
             value={form.password}
@@ -354,7 +391,7 @@ export default function AddDriver() {
       </SectionCard>
 
       <SectionCard title="Work & Payment Details">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid xl:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4">
           <SelectInput
             label="Assign Truck"
             value={form.assignTruck}
@@ -377,7 +414,7 @@ export default function AddDriver() {
       </SectionCard>
 
       <SectionCard title="Bank Information">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4">
           <SelectInput
             label="Bank"
             value={form.bank}
@@ -385,14 +422,14 @@ export default function AddDriver() {
             options={BANK_OPTIONS}
           />
           <TextInput
-          label="Account Number"
+            label="Account Number"
             placeholder="Account Number"
             value={form.accountNumber}
             onChange={setField("accountNumber")}
             error={errors.accountNumber}
           />
           <TextInput
-          label="Routing Number"
+            label="Routing Number"
             placeholder="Routing Number"
             value={form.routingNumber}
             onChange={setField("routingNumber")}

@@ -13,6 +13,7 @@ import {
   Download,
   Check,
   Eye,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import DateRangeModal from "./DateRangeModal";
@@ -228,7 +229,13 @@ function DownloadSuccessModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
-      <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] px-8 py-14 flex items-center justify-center flex-col">
+      <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] px-8 py-14 flex items-center justify-center flex-col relative">
+        <button
+              className="absolute top-4 right-4"
+              onClick={() => onClose()}
+            >
+              <X size={20} className="text-[#000]" />
+            </button>
         <div className="w-[60px] h-[60px] rounded-full bg-[#1F8A46] flex items-center justify-center">
           <Check size={50} className="text-white stroke-[4]" />
         </div>
@@ -402,7 +409,7 @@ export default function TicketStatusTable() {
   return (
     <div className="bg-[#F3F4F6] mt-5 text-[#111827]">
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between flex-wrap gap-3 sm:px-5 px-2 py-3.5 border-b border-[#E5E7EB]">
           <h2 className="text-base font-semibold text-[#111827]">
             Ticket Status
           </h2>
@@ -472,7 +479,7 @@ export default function TicketStatusTable() {
                 <button
                   key={tab}
                   onClick={() => setTabFilter(tab)}
-                  className={`px-4 py-1.5 text-sm rounded-md whitespace-nowrap transition-colors ${
+                  className={`sm:px-4 px-2 py-1.5 text-sm rounded-md whitespace-nowrap transition-colors ${
                     tabFilter === tab
                       ? "bg-[#1D3461] text-white shadow-sm"
                       : "text-[#6B7280] hover:text-[#374151]"

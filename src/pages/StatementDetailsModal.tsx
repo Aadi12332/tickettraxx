@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
+import { useState } from "react";
 
 interface Props {
   open: boolean;
@@ -11,6 +12,8 @@ export default function StatementDetailsModal({
   onClose,
   statementId,
 }: Props) {
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+  
   if (!open) return null;
 
   return (
@@ -29,7 +32,7 @@ export default function StatementDetailsModal({
             Paid
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid xl:grid-cols-3 sm:grid-cols-2 grid-cols-2 gap-3">
             <div>
               <p className="text-sm text-gray-500">Statement ID</p>
               <p className="text-[20px] font-semibold">
@@ -63,7 +66,7 @@ export default function StatementDetailsModal({
                 Truck ID: {truckId}
               </div>
 
-              <div className="grid grid-cols-5 gap-3 p-3">
+              <div className="grid xl:grid-cols-5 sm:grid-cols-2 grid-cols-2 gap-3 p-3">
                 <div>
                   <p className="text-sm text-gray-500">Tickets</p>
                   <p className="text-base font-semibold">8</p>
@@ -125,9 +128,28 @@ export default function StatementDetailsModal({
             </div>
           </div>
 
-          <button className="mt-4 rounded-lg bg-[#223B70] px-6 py-3 text-white">
+          <button onClick={() => {setShowSuccessModal(true);}} className="mt-4 rounded-lg bg-[#223B70] px-6 py-3 text-white">
             Download PDF
           </button>
+
+                {showSuccessModal && (
+                  <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
+                    <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] z-50 px-8 py-14 flex items-center justify-center flex-col relative">
+                      <X
+                        size={20}
+                        className="text-[#000] cursor-pointer absolute top-4 right-4"
+                        onClick={() => {setShowSuccessModal(false); onClose();}}
+                      />
+                      <div className="w-[60px] h-[60px] rounded-full bg-[#1F8A46] flex items-center justify-center">
+                        <Check size={50} className="text-white stroke-[4]" />
+                      </div>
+          
+                      <h2 className="mt-10 text-[16px] text-center leading-none font-normal text-[#000]">
+                        PDF Downloaded
+                      </h2>
+                    </div>
+                  </div>
+                )}
         </div>
       </div>
     </div>

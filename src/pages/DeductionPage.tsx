@@ -396,7 +396,7 @@ function SortDropdown({ selected, onChange }: Props) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="h-10 px-4 bg-white border border-[#E5E7EB] rounded-lg flex items-center gap-2 text-[#1D3461]"
+        className="h-10 px-4 bg-white border border-[#E5E7EB] rounded-lg min-w-max flex items-center gap-2 text-[#1D3461]"
       >
         <Filter size={16} />
         <span className="text-sm">{selected || "Sort By"}</span>
@@ -515,7 +515,7 @@ export default function DeductionPage() {
 
   return (
     <div className="bg-[#F3F4F6]">
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
         <div>
           <h1 className="text-[20px] font-bold text-[#111827]">Deduction</h1>
           <p className="text-base text-[#707070] mt-0.5">
@@ -591,7 +591,7 @@ export default function DeductionPage() {
         </div>
       )}
 
-      <div className="flex gap-4 mb-5">
+      <div className="grid xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 gap-4 mb-5">
         <StatCard
           label="Total Active Deductions"
           value={String(totalActiveDeductions)}
@@ -618,7 +618,7 @@ export default function DeductionPage() {
         />
       </div>
 
-      <div className="bg-white rounded-lg border border-[#E5E7EB] px-5 py-4 mb-5 flex items-end gap-4">
+      <div className="bg-white rounded-lg border border-[#E5E7EB] px-5 py-4 mb-5 xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 grid items-end gap-4">
         <div className="flex flex-col gap-1 flex-1">
           <label className="text-xs text-[#6B7280]">Deduction type</label>
           <div className="relative">
@@ -704,7 +704,7 @@ export default function DeductionPage() {
       )}
 
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center justify-between flex-wrap gap-2 px-5 py-4 border-b border-[#E5E7EB]">
           <div className="relative w-64">
             <Search
               size={16}
@@ -818,8 +818,8 @@ export default function DeductionPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-4 border-t border-[#E5E7EB]">
-          <div className="flex items-center gap-2 text-sm text-[#1D3461]">
+        <div className="flex items-center justify-between md:px-5 px-2 py-4 border-t border-[#E5E7EB]">
+          <div className="flex items-center sm:gap-2 gap-1 text-sm text-[#1D3461]">
             <span>Show</span>
             <select
               value={showEntries}

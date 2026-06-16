@@ -30,7 +30,7 @@ export default function AssignTruckModal({
         </div>
 
         <div className="p-4">
-          <div className="bg-[#F8F8F8] rounded-lg p-3 flex items-center justify-between">
+          <div className="bg-[#F8F8F8] rounded-lg p-3 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-4">
               <img
                 src="https://randomuser.me/api/portraits/men/32.jpg"

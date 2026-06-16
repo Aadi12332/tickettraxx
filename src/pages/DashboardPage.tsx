@@ -152,7 +152,7 @@ export const DashboardPage = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3 flex-wrap justify-between">
         <h1 className="text-[24px] font-bold text-[#111827]">
           Contractor Dashboard
         </h1>
@@ -335,7 +335,7 @@ export const DashboardPage = () => {
             <h3 className="font-semibold text-[#111827] mb-4">
               Ticket Status Breakdown
             </h3>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid sm:grid-cols-4 grid-cols-2 gap-3">
               {[
                 { count: 32, label: "Pending\nUpload", bg: "bg-yellow-50" },
                 { count: 24, label: "Rejected\nTickets", bg: "bg-blue-50" },
@@ -406,7 +406,7 @@ export const DashboardPage = () => {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 grid-cols-1 gap-3">
               <div className="bg-[#0088FF0F] rounded-lg p-5 flex flex-col items-center justify-center">
                 <span className="text-[30px] font-semibold text-[#111827]">
                   Joseph Ken

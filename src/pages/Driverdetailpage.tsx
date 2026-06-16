@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Check,
   FolderOpen,
+  Eye,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -30,143 +31,42 @@ interface TicketRow {
   tonage: number;
   rate: string;
   fsc: string;
+  gross: string;
+  ticketStatus: "Approved" | "Pending" | "Rejected";
+  invoiceStatus: "Approved" | "Pending" | "Rejected";
+  settlementStatus: "Approved" | "Pending" | "Rejected";
 }
 
 type Tab = "Tickets" | "Statement";
 type SortDir = "asc" | "desc" | null;
 
 const TICKET_ROWS: TicketRow[] = [
-  {
-    id: 1,
-    ticketNo: "#653783",
-    date: "06/01/2026",
-    aliasUnit: "0952",
-    driver: "Terry Bothman",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Fine Sand",
-    tonage: 27.69,
-    rate: "$304.59",
-    fsc: "5.00%",
-  },
-  {
-    id: 2,
-    ticketNo: "#682497",
-    date: "15/01/2026",
-    aliasUnit: "0650",
-    driver: "Emery Workman",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Crushed Granite",
-    tonage: 28.32,
-    rate: "$311.52",
-    fsc: "5.00%",
-  },
-  {
-    id: 3,
-    ticketNo: "#598246",
-    date: "25/01/2026",
-    aliasUnit: "0658",
-    driver: "Roger Dokidis",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "River Pebbles",
-    tonage: 27.45,
-    rate: "$301.95",
-    fsc: "5.00%",
-  },
-  {
-    id: 4,
-    ticketNo: "#546892",
-    date: "02/02/2026",
-    aliasUnit: "0485",
-    driver: "Mira Dorwart",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Limestone",
-    tonage: 26.43,
-    rate: "$290.73",
-    fsc: "5.00%",
-  },
-  {
-    id: 5,
-    ticketNo: "#598246",
-    date: "04/02/2026",
-    aliasUnit: "0125",
-    driver: "James Bergson",
-    pickup: "Hanson Lake",
-    dropoff: "Hanson BP",
-    material: "Basalt Chips",
-    tonage: 25.51,
-    rate: "$186.50",
-    fsc: "5.00%",
-  },
-  {
-    id: 6,
-    ticketNo: "#516498",
-    date: "08/02/2026",
-    aliasUnit: "0478",
-    driver: "Hanna Mango",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Slate Shingles",
-    tonage: 26.59,
-    rate: "$220.30",
-    fsc: "5.00%",
-  },
-  {
-    id: 7,
-    ticketNo: "#112546",
-    date: "20/02/2026",
-    aliasUnit: "0178",
-    driver: "Erin Carder",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Coarse Sand",
-    tonage: 20.5,
-    rate: "$165.50",
-    fsc: "5.00%",
-  },
-  {
-    id: 8,
-    ticketNo: "#112546",
-    date: "20/02/2026",
-    aliasUnit: "0597",
-    driver: "Jordyn Korsgaard",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Concrete",
-    tonage: 20.5,
-    rate: "$165.50",
-    fsc: "5.00%",
-  },
-  {
-    id: 9,
-    ticketNo: "#112546",
-    date: "21/02/2026",
-    aliasUnit: "0312",
-    driver: "Alex Mercer",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Gravel Mix",
-    tonage: 22.1,
-    rate: "$188.00",
-    fsc: "5.00%",
-  },
-  {
-    id: 10,
-    ticketNo: "#112546",
-    date: "21/02/2026",
-    aliasUnit: "0417",
-    driver: "Nina Ross",
-    pickup: "Hanson Lake",
-    dropoff: "LMC",
-    material: "Sand Mix",
-    tonage: 19.8,
-    rate: "$162.30",
-    fsc: "5.00%",
-  },
+  { id: 1, ticketNo: "#653783", date: "06/01/2026", aliasUnit: "0952", driver: "Terry Bothman", pickup: "Hanson Lake", dropoff: "LMC", material: "Fine Sand", tonage: 27.69, rate: "$304.59", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 2, ticketNo: "#682497", date: "15/01/2026", aliasUnit: "0650", driver: "Emery Workman", pickup: "Hanson Lake", dropoff: "LMC", material: "Crushed Granite", tonage: 28.32, rate: "$311.52", fsc: "5.00%", gross: "5.00%", ticketStatus: "Pending", invoiceStatus: "Pending", settlementStatus: "Pending" },
+  { id: 3, ticketNo: "#598246", date: "25/01/2026", aliasUnit: "0658", driver: "Roger Dokidis", pickup: "Hanson Lake", dropoff: "LMC", material: "River Pebbles", tonage: 27.45, rate: "$301.95", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 4, ticketNo: "#546892", date: "02/02/2026", aliasUnit: "0485", driver: "Mira Dorwart", pickup: "Hanson Lake", dropoff: "LMC", material: "Limestone", tonage: 26.43, rate: "$290.73", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 5, ticketNo: "#598246", date: "04/02/2026", aliasUnit: "0125", driver: "James Bergson", pickup: "Hanson Lake", dropoff: "Hanson BP", material: "Basalt Chips", tonage: 25.51, rate: "$186.50", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 6, ticketNo: "#516498", date: "08/02/2026", aliasUnit: "0478", driver: "Hanna Mango", pickup: "Hanson Lake", dropoff: "LMC", material: "Slate Shingles", tonage: 26.59, rate: "$220.30", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 7, ticketNo: "#112546", date: "20/02/2026", aliasUnit: "0178", driver: "Erin Carder", pickup: "Hanson Lake", dropoff: "LMC", material: "Coarse Sand", tonage: 20.5, rate: "$165.50", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 8, ticketNo: "#112546", date: "20/02/2026", aliasUnit: "0597", driver: "Jordyn Korsgaard", pickup: "Hanson Lake", dropoff: "LMC", material: "Concrete", tonage: 20.5, rate: "$165.50", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 9, ticketNo: "#112546", date: "21/02/2026", aliasUnit: "0312", driver: "Alex Mercer", pickup: "Hanson Lake", dropoff: "LMC", material: "Gravel Mix", tonage: 22.1, rate: "$188.00", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  { id: 10, ticketNo: "#112546", date: "21/02/2026", aliasUnit: "0417", driver: "Nina Ross", pickup: "Hanson Lake", dropoff: "LMC", material: "Sand Mix", tonage: 19.8, rate: "$162.30", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
 ];
+
+function StatusBadge({ status }: { status: TicketRow["ticketStatus"] }) {
+  const styles: Record<string, string> = {
+    Approved: "bg-[#22C55E] text-white",
+    Pending: "bg-[#D4A017] text-white",
+    Rejected: "bg-[#EF4444] text-white",
+  };
+  return (
+    <span
+      className={`inline-flex items-center justify-center px-4 py-1.5 rounded-full text-[12px] font-semibold ${styles[status]}`}
+    >
+      {status}
+    </span>
+  );
+}
 
 const SHOW_OPTIONS = [5, 10, 20, 50];
 
@@ -357,19 +257,22 @@ function TicketsTab() {
     { key: "tonage", label: "Tonage" },
     { key: "rate", label: "Rate" },
     { key: "fsc", label: "FSC" },
+    { key: "gross", label: "Gross" },
+{ key: "ticketStatus", label: "Ticket Status" },
+{ key: "invoiceStatus", label: "Invoice Status" },
+{ key: "settlementStatus", label: "Settlement Status" },
   ];
 
   return (
     <div>
-      {/* Header row */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
         <div>
           <h3 className="text-base font-bold text-[#111827]">Tickets</h3>
           <p className="text-sm text-[#6B7280] mt-0.5">
             Total Tickets: {filtered.length}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="relative">
             <Search
               size={14}
@@ -436,6 +339,9 @@ function TicketsTab() {
                   </span>
                 </th>
               ))}
+              <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#374151] whitespace-nowrap">
+      Action
+    </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E7EB]">
@@ -492,6 +398,28 @@ function TicketsTab() {
                   <td className="px-3 py-3.5 text-[#374151] whitespace-nowrap">
                     {row.fsc}
                   </td>
+                  <td className="px-3 py-3.5 text-[#374151] whitespace-nowrap">
+                    {row.gross}
+                  </td>
+                  <td className="px-3 py-3.5">
+                    <StatusBadge status={row.ticketStatus} />
+                  </td>
+                  <td className="px-3 py-3.5">
+                    <StatusBadge status={row.invoiceStatus} />
+                  </td>
+                  <td className="px-3 py-3.5">
+                    <StatusBadge status={row.settlementStatus} />
+                  </td>
+                  <td className="px-3 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <button className="w-8 h-8 rounded-lg bg-[#F3F4F6] border border-[#E5E7EB] flex items-center justify-center">
+                        <Eye size={16} className="text-[#6B7280]" />
+                      </button>
+                      <button className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center border border-[#E5E7EB] justify-center">
+                        <Check size={16} className="text-[#6B7280]" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
@@ -546,7 +474,7 @@ function StatementTab() {
           <p className="text-sm font-semibold text-[#374151] mb-4">
             Filter here
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Calendar size={16} className="text-[#6B7280]" />
               <span className="text-sm text-[#6B7280]">From</span>
@@ -584,7 +512,7 @@ function StatementTab() {
             </h2>
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-wrap md:flex-nowrap gap-4">
             <div className="overflow-hidden">
               <div className="flex-1 bg-white border border-[#D9D9D9] rounded-lg text-[13px] overflow-hidden">
                 <div className="overflow-auto scroll-hide">
@@ -657,7 +585,7 @@ function StatementTab() {
               </div>
             </div>
 
-            <div className="w-[280px] bg-white border border-[#D9D9D9] rounded-lg py-4 px-3 flex-shrink-0">
+            <div className="md:w-[280px] min-w-[280px] bg-white border border-[#D9D9D9] rounded-lg py-4 px-3">
               <h3 className="text-base font-bold text-[#333] leading-none mb-6">
                 Statement Summary
               </h3>
@@ -725,7 +653,7 @@ export default function DriverDetailPage() {
       </div>
 
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
-        <div className="px-6 py-5 flex items-start justify-between gap-4">
+        <div className="px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
             <div className="relative w-20 h-20 rounded-full overflow-hidden bg-[#E5E7EB] flex-shrink-0 border-2 border-white shadow">
               <img
@@ -750,7 +678,7 @@ export default function DriverDetailPage() {
               <p className="text-sm text-[#6B7280] mt-0.5">New Jersey</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <button className="flex items-center gap-2 px-4 py-2 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
               <Phone size={14} /> Call
             </button>
@@ -770,7 +698,7 @@ export default function DriverDetailPage() {
           </div>
         </div>
 
-        <div className="px-6 py-3 bg-[#F9FAFB] border-t border-[#E5E7EB] flex items-center gap-8">
+        <div className="px-6 py-3 bg-[#F9FAFB] border-t border-[#E5E7EB] flex flex-wrap items-center gap-8">
           <div className="flex items-center gap-2 text-sm text-[#6B7280]">
             <CreditCard size={14} />
             <span className="font-medium text-[#374151]">Driver ID :</span>
@@ -796,7 +724,7 @@ export default function DriverDetailPage() {
             <Trash2 size={14} />
           </button>
         </div>
-        <div className="px-6 py-5 grid grid-cols-2 gap-y-4 gap-x-12">
+        <div className="px-6 py-5 grid sm:grid-cols-2 gap-y-4 gap-x-12">
           <div className="flex items-start gap-3">
             <Phone size={15} className="text-[#9CA3AF] mt-0.5 flex-shrink-0" />
             <div>

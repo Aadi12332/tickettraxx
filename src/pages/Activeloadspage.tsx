@@ -5,15 +5,14 @@ import {
   Download,
   ChevronDown,
   Calendar,
-  Filter,
   MoreVertical,
   X,
   Check,
-  Eye,
-  DownloadIcon,
 } from "lucide-react";
+import { TicketApprovalModal } from "./TicketApprovalModal";
+import { NotDeliveredModal } from "./NotDeliveredModal";
+import { FilterDropdown } from "./Activeloadstable";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 interface LoadRow {
   id: number;
   driverName: string;
@@ -36,7 +35,6 @@ const STATUS_STYLES: Record<LoadRow["status"], string> = {
   Cancelled:  "bg-[#EF4444] text-white",
 };
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
 const INITIAL_DATA: LoadRow[] = [
   { id: 1,  driverName: "Marley Levin",    clientName: "CELINA",           date: "02/04/2026", material: "Y Rock",        pickup: "Hanson Lake", deliver: "LMC", loads: 3, status: "Active"     },
   { id: 2,  driverName: "Lydia Culhane",   clientName: "RESOLVE Ravenna #1", date: "02/04/2026", material: "MAN SAND",    pickup: "Hanson Lake", deliver: "LMC", loads: 2, status: "Delivered"  },
@@ -70,7 +68,6 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: "status",     label: "Status"        },
 ];
 
-// ─── Sort Icon ────────────────────────────────────────────────────────────────
 function SortIcon({ dir }: { dir: SortDir }) {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="inline ml-1 flex-shrink-0">
@@ -80,70 +77,55 @@ function SortIcon({ dir }: { dir: SortDir }) {
   );
 }
 
-// ─── Actions Menu ─────────────────────────────────────────────────────────────
-function ActionsMenu({ rowId }: { rowId: number }) {
-  const [open, setOpen]           = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [successTitle, setSuccessTitle] = useState("");
+type Status = "Active" | "Delivered" | "Incomplete" | "Cancelled";
+
+function ActionsMenu({
+  status,
+}: {
+  loadId: number;
+  status: Status;
+}) {
+  const [showDeliveredModal, setShowDeliveredModal] = useState(false);
+  const [showCancelledModal, setShowCancelledModal] = useState(false);
+
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, []);
+  const handleView = () => {
+    if (status === "Delivered" || status === "Incomplete") {
+      setShowDeliveredModal(true);
+      return;
+    }
 
-  const actions: { label: string; icon: React.ElementType; onClick: () => void }[] = [
-    { label: "View Details",   icon: Eye,          onClick: () => { console.log("View", rowId); setOpen(false); } },
-    { label: "Download PDF",   icon: DownloadIcon, onClick: () => { setSuccessTitle("PDF");   setOpen(false); setShowSuccess(true); } },
-    { label: "Download Excel", icon: DownloadIcon, onClick: () => { setSuccessTitle("Excel"); setOpen(false); setShowSuccess(true); } },
-  ];
+    if (status === "Cancelled") {
+      setShowCancelledModal(true);
+      return;
+    }
+  };
 
   return (
     <>
       <div ref={ref} className="relative inline-block">
         <button
-          onClick={() => setOpen((o) => !o)}
-          className="p-1.5 rounded-md text-[#9CA3AF] hover:text-[#374151] hover:bg-gray-100 border border-[#E8E8E8] transition-colors"
+          onClick={() => handleView()}
+          className="p-1.5 rounded-md text-[#9CA3AF] hover:text-[#374151] hover:bg-gray-100 border border-[#E8E8E8]"
         >
           <MoreVertical size={16} />
         </button>
-        {open && (
-          <div className="absolute right-0 mt-1 w-[180px] bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1 overflow-hidden">
-            {actions.map(({ label, icon: Icon, onClick }, index) => (
-              <button
-                key={label}
-                onClick={onClick}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-[#374151] transition-colors hover:bg-gray-50 ${
-                  index !== actions.length - 1 ? "border-b border-gray-200" : ""
-                }`}
-              >
-                <Icon size={18} className="text-[#3157B7]" />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      {showSuccess && (
-        <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
-          <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] px-8 py-14 flex items-center justify-center flex-col relative">
-            <X size={20} className="text-[#000] cursor-pointer absolute top-4 right-4" onClick={() => setShowSuccess(false)} />
-            <div className="w-[60px] h-[60px] rounded-full bg-[#1F8A46] flex items-center justify-center">
-              <Check size={50} className="text-white stroke-[4]" />
-            </div>
-            <h2 className="mt-10 text-[16px] text-center font-normal text-[#000]">{successTitle} Downloaded</h2>
-          </div>
-        </div>
-      )}
+      <TicketApprovalModal
+        open={showDeliveredModal}
+        onClose={() => setShowDeliveredModal(false)}
+      />
+
+      <NotDeliveredModal
+        open={showCancelledModal}
+        onClose={() => setShowCancelledModal(false)}
+      />
     </>
   );
 }
 
-// ─── Download Modal ───────────────────────────────────────────────────────────
 function DownloadModal({ onClose }: { onClose: () => void }) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [successTitle, setSuccessTitle] = useState("");
@@ -198,7 +180,6 @@ function DownloadModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Pagination ───────────────────────────────────────────────────────────────
 function Pagination({
   currentPage,
   totalPages,
@@ -259,7 +240,6 @@ function Pagination({
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ActiveLoadsPage() {
   const [data]                        = useState<LoadRow[]>(INITIAL_DATA);
   const [showEntries, setShowEntries] = useState(10);
@@ -268,8 +248,8 @@ export default function ActiveLoadsPage() {
   const [sortKey, setSortKey]         = useState<SortKey | null>(null);
   const [sortDir, setSortDir]         = useState<SortDir>(null);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [filterStatuses, setFilterStatuses] = useState<Status[]>([]);
 
-  // Filter state
   const [payPeriod, setPayPeriod] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate]     = useState("");
@@ -317,8 +297,7 @@ export default function ActiveLoadsPage() {
   return (
     <div className="bg-[#F3F4F6]">
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">Active Loads</h1>
           <p className="text-sm text-[#707070] mt-0.5">
@@ -333,9 +312,7 @@ export default function ActiveLoadsPage() {
         </button>
       </div>
 
-      {/* ── Filters ── */}
-      <div className="bg-white rounded-xl border border-[#E5E7EB] px-5 py-4 mb-5 flex items-end gap-3">
-        {/* Pay Period */}
+      <div className="bg-white rounded-xl border border-[#E5E7EB] px-5 py-4 mb-5 grid xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 items-end gap-3">
         <div className="flex flex-col gap-1 flex-1">
           <label className="text-xs text-[#6B7280]">Pay Period</label>
           <div className="relative">
@@ -411,12 +388,9 @@ export default function ActiveLoadsPage() {
         {/* Table header bar */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E5E7EB]">
           <h2 className="text-base font-semibold text-[#111827]">Active Loads</h2>
-          <button className="flex items-center gap-2 px-4 py-1.5 text-sm border border-[#E5E7EB] text-[#1D3461] rounded-lg bg-white">
-            <Filter size={13} /> Filter By <ChevronDown size={13} />
-          </button>
+          <FilterDropdown selected={filterStatuses} onChange={setFilterStatuses} />
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
@@ -479,7 +453,8 @@ export default function ActiveLoadsPage() {
                       </span>
                     </td>
                     <td className="px-3 py-3.5">
-                      <ActionsMenu rowId={row.id} />
+                      <ActionsMenu   loadId={row.id}
+  status={row.status} />
                     </td>
                   </tr>
                 ))

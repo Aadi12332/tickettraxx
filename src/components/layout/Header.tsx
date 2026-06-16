@@ -7,12 +7,16 @@ import {
   User,
   LogOutIcon,
   Settings,
+  MenuIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import NotificationDrawer from "../../pages/NotificationDrawer";
+interface HeaderProps {
+  onMenuClick: () => void;
+}
 
-export const Header = () => {
+export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -52,9 +56,16 @@ export const Header = () => {
 
   return (
     <header className="p-5 pb-0 sticky top-0 z-10">
-      <div className="h-[71px] bg-white border-b rounded-full border-gray-200 flex items-center justify-between px-6 flex-shrink-0 shadow-[0px_4px_15.4px_0px_#0000001C]">
+      <div className="sm:h-[71px] h-14 bg-white border-b rounded-full border-gray-200 flex items-center justify-between sm:px-6 px-3 flex-shrink-0 shadow-[0px_4px_15.4px_0px_#0000001C]">
         <div className="flex items-center gap-3">
-          <div className="relative">
+          <button
+            onClick={onMenuClick}
+            aria-label="Toggle sidebar"
+            className="lg:hidden text-gray-400 hover:text-gray-600"
+          >
+            <MenuIcon size={20} />
+          </button>
+          <div className="relative hidden sm:block">
             <Search
               size={16}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -65,17 +76,22 @@ export const Header = () => {
               className="pl-9 pr-4 py-2 bg-gray-50 border border-[#BFC5D1] rounded-lg text-sm text-gray-700 outline-none transition-colors w-64"
             />
           </div>
-          <button className="text-gray-400 hover:text-gray-600 transition-colors">
-            <Settings size={18} />
+          <button className="text-gray-400 hover:text-gray-600 transition-colors hidden sm:block">
+            <Settings size={24} />
           </button>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="relative">
-          <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
-            <MessageCircle size={24} />
+          <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors sm:hidden">
+            <Settings size={24} />
           </button>
-          <span className="bg-[#1B84FF] absolute top-0 right-1 rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]">5</span>
+          <div className="relative">
+            <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
+              <MessageCircle size={24} />
+            </button>
+            <span className="bg-[#1B84FF] absolute top-0 right-1 rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]">
+              5
+            </span>
           </div>
           <button className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors">
             <Mail size={24} />
@@ -87,7 +103,9 @@ export const Header = () => {
               className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 transition-colors relative"
             >
               <Bell size={24} />
-              <span className="bg-red-500 absolute top-0 right-1 rounded-full w-3.5 h-3.5 flex items-center text-white justify-center text-[8px]">2</span>
+              <span className="bg-red-500 absolute top-0 right-1 rounded-full w-3.5 h-3.5 flex items-center text-white justify-center text-[8px]">
+                2
+              </span>
             </button>
 
             <NotificationDrawer

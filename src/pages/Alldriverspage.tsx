@@ -162,7 +162,7 @@ function SortDropdown({ selected, onChange }: { selected?: SortOption; onChange:
         <ChevronDown size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
+        <div className="absolute sm:right-0 left-0 sm:left-[unset] top-full mt-1 w-52 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt}
@@ -514,7 +514,7 @@ export default function AllDriversPage() {
   return (
     <div className="bg-[#F3F4F6]">
 
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex items-start gap-3 flex-wrap justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">All Drivers</h1>
           <p className="text-sm text-[#707070] mt-0.5">Manage your drivers</p>
@@ -535,7 +535,7 @@ export default function AllDriversPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 mb-5">
+      <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
         <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="Total Drivers"    value={String(total)}    trend="+19.01%" trendColor="#F97316" />
         <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="Active Drivers"   value={String(active)}   trend="+19.01%" trendColor="#F97316" />
         <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="Inactive Drivers" value={String(inactive)} trend="+19.01%" trendColor="#F97316" />
@@ -544,7 +544,7 @@ export default function AllDriversPage() {
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center gap-3 flex-wrap justify-between px-5 py-4 border-b border-[#E5E7EB]">
           <h2 className="text-base font-semibold text-[#111827]">Drivers list</h2>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
@@ -558,8 +558,8 @@ export default function AllDriversPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5E7EB]">
-          <div className="flex items-center gap-3">
+        <div className="flex sm:items-center flex-col sm:flex-row gap-3 justify-between px-5 py-3 border-b border-[#E5E7EB]">
+          <div className="flex items-center flex-wrap gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 border border-[#E5E7EB] rounded-lg">
               <input
                 type="checkbox"
@@ -661,7 +661,7 @@ export default function AllDriversPage() {
           </table>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-4 border-t border-[#E5E7EB]">
+        <div className="flex items-center gap-3 flex-wrap justify-between px-5 py-4 border-t border-[#E5E7EB]">
           <div className="flex items-center gap-2 text-sm text-[#1D3461]">
             <span>Show</span>
             <select

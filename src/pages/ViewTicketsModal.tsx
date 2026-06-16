@@ -63,13 +63,13 @@ export default function ViewTicketsModal({ open, onClose }: Props) {
             Total Tickets: 10
           </div>
 
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex items-center justify-between flex-wrap gap-3">
             <button className="flex items-center gap-2 rounded-lg border px-4 py-2">
               <Filter size={18} />
               Filter
             </button>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap gap-3">
               <div className="relative">
                 <Search
                   size={18}
@@ -171,7 +171,7 @@ export default function ViewTicketsModal({ open, onClose }: Props) {
             </table>
           </div>
 
-          <div className="mt-3 flex items-center justify-between">
+          <div className="mt-3 flex items-center gap-3 flex-wrap justify-between">
             <div className="flex items-center gap-3">
               <span>Show</span>
 

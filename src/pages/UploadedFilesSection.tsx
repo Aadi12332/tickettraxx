@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Download, Eye, Trash2 } from "lucide-react";
+import { Check, Download, Eye, Trash2, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import Bill from "../assets/images/bill.png";
 
@@ -72,7 +72,7 @@ export function TicketPreviewModal({
           </button>
         </div>
 
-        <div className="px-4 pt-4 pb-4 grid grid-cols-4 gap-x-4 gap-y-3">
+        <div className="px-4 pt-4 pb-4 grid lg:grid-cols-4 grid-cols-2 gap-x-4 gap-y-3">
           {fields.map(({ label, value }) => (
             <div key={label}>
               <p className="text-sm font-bold text-[#111827] leading-snug">{label}</p>
@@ -115,7 +115,8 @@ function DeleteSuccessModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
-      <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] px-8 py-14 flex items-center justify-center flex-col">
+      <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] px-8 py-14 flex items-center justify-center flex-col relative">
+        <X size={20} onClick={()=>onClose()} className="text-black absolute top-4 right-4" />
         <div className="w-[60px] h-[60px] rounded-full bg-[#1F8A46] flex items-center justify-center">
           <Check size={50} className="text-white stroke-[4]" />
         </div>
@@ -156,8 +157,9 @@ export default function UploadedFilesSection({
 
         <div className="divide-y divide-[#F3F4F6] px-4 py-2">
           {files.map((file) => (
-            <div key={file.id} className="flex items-center gap-4 py-4">
-              <div className="w-14 h-14 rounded-xl bg-[#DBEAFE] flex items-center justify-center flex-shrink-0">
+            <div key={file.id} className="flex items-center gap-4 py-4 flex-wrap">
+              <div className="flex items-center gap-4 py-4 flex-1">
+                <div className="w-14 h-14 rounded-xl bg-[#DBEAFE] flex items-center justify-center flex-shrink-0">
                 <span className="text-[#1D3461] text-sm font-bold tracking-wide">
                   {file.ext}
                 </span>
@@ -169,6 +171,7 @@ export default function UploadedFilesSection({
                   Uploaded for :{" "}
                   <span className="font-semibold text-[#111827]">{file.uploadedFor}</span>
                 </p>
+              </div>
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">

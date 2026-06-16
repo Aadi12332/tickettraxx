@@ -20,6 +20,7 @@ import ActiveLoadsPage from "./pages/Activeloadspage";
 import TruckDetailsPage from "./pages/Truckdetailspage";
 import AddDriver from "./pages/AddDriver";
 import DriverDetailPage from "./pages/Driverdetailpage";
+import AddTruck from "./pages/AddTruck";
 
 export const App = () => {
 
@@ -67,6 +68,8 @@ export const App = () => {
                 path="/dashboard/trucks"
                 element={<TruckDetailsPage />}
               />
+
+              <Route path="/dashboard/trucks/add" element={<AddTruck />} />
 
               <Route
                 path="/dashboard/upload-tickets"

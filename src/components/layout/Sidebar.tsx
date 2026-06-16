@@ -71,8 +71,13 @@ const navItems = [
     path: "/dashboard/permissions",
   },
 ];
+interface SidebarProps {
+  setSidebarOpen?: (value: boolean) => void;
+}
 
-export const Sidebar = () => {
+export const Sidebar = ({
+  setSidebarOpen,
+}: SidebarProps) => {
   const [expanded, setExpanded] = useState(["My Drivers", "Ticket Management"]);
 
   const toggle = (label: string) => {
@@ -82,6 +87,10 @@ export const Sidebar = () => {
         : [...prev, label],
     );
   };
+
+  const handleNavClick = () => {
+  setSidebarOpen?.(false);
+};
 
   return (
     <aside className="p-5 pr-0">
@@ -121,6 +130,7 @@ export const Sidebar = () => {
                         <NavLink
                           key={child.path}
                           to={child.path}
+                          onClick={handleNavClick}
                           className={({ isActive }) =>
                             `
                             rounded-lg
@@ -156,6 +166,7 @@ export const Sidebar = () => {
               <NavLink
                 key={item.label}
                 to={item.path!}
+                onClick={handleNavClick}
                 end
                 className={({ isActive }) =>
                   `

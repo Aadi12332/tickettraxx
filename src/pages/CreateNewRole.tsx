@@ -243,7 +243,7 @@ export default function CreateNewRole({ mode = "create" }: CreateNewRoleProps) {
 
   return (
     <div className="bg-[#F3F4F6]">
-      <div className="flex items-start gap-5 mb-6">
+      <div className="flex items-start md:flex-row flex-col gap-5 mb-6">
         <button
           onClick={handleCancel}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors whitespace-nowrap"

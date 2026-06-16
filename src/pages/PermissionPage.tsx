@@ -384,7 +384,7 @@ export default function PermissionsPage() {
 
   return (
     <div className="bg-[#F3F4F6]">
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3 flex-wrap">
         <div>
           <h1 className="text-[20px] font-bold text-[#111827]">Permissions</h1>
           <p className="text-base text-[#707070] mt-0.5">
@@ -407,7 +407,7 @@ export default function PermissionsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center gap-3 justify-between px-5 py-4 border-b border-[#E5E7EB]">
           <div className="relative w-64">
             <Search
               size={16}

@@ -132,7 +132,7 @@ export default function UploadTicketPage() {
           <h2 className="text-base font-semibold text-[#111827]">Upload Ticket files</h2>
         </div>
 
-        <div className="p-6 flex gap-6">
+        <div className="p-6 flex sm:flex-row flex-col gap-6">
           <div className="flex-1 min-w-0">
             <div
               onDrop={onDrop}
@@ -178,7 +178,7 @@ export default function UploadTicketPage() {
             <button
               onClick={handleExtract}
               disabled={!previewUrl}
-              className={`mt-5 px-8 py-3 text-sm font-semibold rounded-lg transition-colors ${
+              className={`mt-5 px-8 py-3 text-sm font-semibold rounded-lg sm:block hidden transition-colors ${
                 previewUrl
                   ? "bg-[#1D3461] text-white hover:bg-[#16213a]"
                   : "bg-[#1D3461]/60 text-white/70 cursor-not-allowed"
@@ -188,7 +188,7 @@ export default function UploadTicketPage() {
             </button>
           </div>
 
-          <div className="w-[290px] flex-shrink-0">
+          <div className="sm:w-[290px] flex-shrink-0">
             <p className="text-base font-semibold text-[#111827] mb-3">Preview Ticket</p>
             <div className="rounded-lg overflow-hidden border border-[#E5E7EB] bg-[#F3F4F6] h-[310px] flex items-center justify-center">
               {previewUrl ? (
@@ -205,6 +205,17 @@ export default function UploadTicketPage() {
               )}
             </div>
           </div>
+           <button
+              onClick={handleExtract}
+              disabled={!previewUrl}
+              className={`mt-5 px-8 py-3 text-sm font-semibold rounded-lg sm:hidden transition-colors ${
+                previewUrl
+                  ? "bg-[#1D3461] text-white hover:bg-[#16213a]"
+                  : "bg-[#1D3461]/60 text-white/70 cursor-not-allowed"
+              }`}
+            >
+              Extract
+            </button>
         </div>
       </div>
     </div>

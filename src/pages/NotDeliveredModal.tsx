@@ -38,7 +38,7 @@ export function NotDeliveredModal({
             className="w-full h-[150px] rounded-lg object-cover"
           />
 
-          <div className="flex items-center justify-between mt-5">
+          <div className="flex items-center justify-between flex-wrap gap-3 mt-5">
             <p className="text-[10px] text-[#1C3B73]">
               *Requesting admin to create a ticket to resolve the
               delivery issue.

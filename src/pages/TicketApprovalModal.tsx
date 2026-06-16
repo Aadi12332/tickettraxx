@@ -1,6 +1,7 @@
-import { CheckCircle, XCircle, X, Check } from "lucide-react";
+// import { CheckCircle, XCircle, X, Check } from "lucide-react";
+import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { CustomSettlementSelect } from "./CustomSettlementSelect";
+// import { CustomSettlementSelect } from "./CustomSettlementSelect";
 import Bill from "../assets/images/bill.png";
 
 export function TicketApprovalModal({
@@ -11,35 +12,36 @@ export function TicketApprovalModal({
   onClose: () => void;
 }) {
   const [approveOpen, setApproveOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  console.log(approveOpen);
+  // const [selectedDate, setSelectedDate] = useState("");
   const approveRef = useRef<HTMLDivElement>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [comment, setComment] = useState("");
-  const [commentError, setCommentError] = useState("");
+  // const [showSuccessModal, setShowSuccessModal] = useState(false);
+  // const [comment, setComment] = useState("");
+  // const [commentError, setCommentError] = useState("");
 
-  const wordCount = comment.trim().split(/\s+/).filter(Boolean).length;
+  // const wordCount = comment.trim().split(/\s+/).filter(Boolean).length;
 
-  const handleDenied = () => {
-    if (!comment.trim()) {
-      setCommentError("Comment is required");
-      return;
-    }
+  // const handleDenied = () => {
+  //   if (!comment.trim()) {
+  //     setCommentError("Comment is required");
+  //     return;
+  //   }
 
-    if (wordCount > 200) {
-      setCommentError("Maximum 200 words allowed");
-      return;
-    }
+  //   if (wordCount > 200) {
+  //     setCommentError("Maximum 200 words allowed");
+  //     return;
+  //   }
 
-    setCommentError("");
-    onClose();
-  };
+  //   setCommentError("");
+  //   onClose();
+  // };
 
-  const settlementOptions = [
-    "01/23/2026",
-    "01/30/2026",
-    "02/06/2026",
-    "Manual Settlement",
-  ];
+  // const settlementOptions = [
+  //   "01/23/2026",
+  //   "01/30/2026",
+  //   "02/06/2026",
+  //   "Manual Settlement",
+  // ];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -72,7 +74,7 @@ export function TicketApprovalModal({
         </div>
 
         <div className="p-5">
-          <div className="grid grid-cols-5 gap-3 mb-6">
+          <div className="grid lg:grid-cols-5 md:grid-cols-3 grid-cols-2 gap-3 mb-6">
             <Info title="Date" value="13/01/2026" />
             <Info title="Number ticket" value="1975244685" />
             <Info title="Unit" value="900" />
@@ -86,14 +88,14 @@ export function TicketApprovalModal({
             <Info title="Submission date" value="01/09/2026" />
           </div>
 
-          <div className="grid grid-cols-[1.4fr_1fr] gap-6">
+          <div className="grid grid-cols-1 gap-6">
             <img
               src={Bill}
               alt=""
               className="w-full min-h-[500px] h-full rounded-lg object-cover"
             />
 
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="bg-[#CDFFCD] rounded-lg p-5 flex flex-col items-center justify-center h-[270px]">
                 <CheckCircle size={100} className="text-[#34C759] mb-10" />
 
@@ -196,7 +198,7 @@ export function TicketApprovalModal({
                   Denied
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

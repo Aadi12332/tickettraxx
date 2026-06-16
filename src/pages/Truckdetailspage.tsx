@@ -12,10 +12,16 @@ import {
   X,
   Check,
   Eye,
-  Edit,
-  Smile,
+  MoreHorizontal,
+  MinusCircle,
+  UserCircle,
+  XSquare,
 } from "lucide-react";
-
+import { TruckDetailsModal } from "./TruckDetailsModal";
+import DocumentPreviewModal from "./DocumentPreviewModal";
+import truckDetails from "../assets/images/truck-details.png";
+import { AssignDriverModal } from "./AssignDriverModal";
+import { useNavigate } from "react-router-dom";
 
 interface TruckRow {
   id: number;
@@ -30,41 +36,125 @@ interface TruckRow {
 type SortKey = keyof TruckRow;
 type SortDir = "asc" | "desc" | null;
 
-type SortOption =
-  | "Truck ID (A-Z)"
-  | "Truck ID (Z-A)"
-  | "Name (A-Z)"
-  | "Name (Z-A)"
-  | "Jobs (Most First)"
-  | "Jobs (Least First)";
+type SortOption = "Inspection (Earliest)" | "Inspection (Latest)";
 
 const SORT_OPTIONS: SortOption[] = [
-  "Truck ID (A-Z)",
-  "Truck ID (Z-A)",
-  "Name (A-Z)",
-  "Name (Z-A)",
-  "Jobs (Most First)",
-  "Jobs (Least First)",
+  "Inspection (Earliest)",
+  "Inspection (Latest)",
 ];
 
-
 const INITIAL_TRUCKS: TruckRow[] = [
-  { id: 1,  truckId: "TX4578", assignedTo: "Joseph Martin",  jobs: 10, load: 220, lastInspection: "10/07/2025", active: true  },
-  { id: 2,  truckId: "TX5682", assignedTo: "James Mathew",   jobs: 8,  load: 200, lastInspection: "14/07/2025", active: true  },
-  { id: 3,  truckId: "TX6820", assignedTo: "Alex Robert",    jobs: 5,  load: 180, lastInspection: "18/07/2025", active: false },
-  { id: 4,  truckId: "TX5973", assignedTo: "Richard Henry",  jobs: 9,  load: 170, lastInspection: "20/07/2025", active: true  },
-  { id: 5,  truckId: "TX6891", assignedTo: "Mike Kim",       jobs: 12, load: 190, lastInspection: "22/07/2025", active: false },
-  { id: 6,  truckId: "TX5791", assignedTo: "Charles Wright", jobs: 15, load: 210, lastInspection: "25/07/2025", active: true  },
-  { id: 7,  truckId: "TX4579", assignedTo: "James Harry",    jobs: 10, load: 230, lastInspection: "27/07/2025", active: true  },
-  { id: 8,  truckId: "TX9836", assignedTo: "Joe Tim",        jobs: 6,  load: 220, lastInspection: "28/07/2025", active: true  },
-  { id: 9,  truckId: "TX5762", assignedTo: "Michael George", jobs: 9,  load: 240, lastInspection: "30/07/2025", active: false },
-  { id: 10, truckId: "TX1122", assignedTo: "Maria Chen",     jobs: 7,  load: 195, lastInspection: "02/08/2025", active: true  },
-  { id: 11, truckId: "TX3344", assignedTo: "Tom Baker",      jobs: 4,  load: 150, lastInspection: "05/08/2025", active: false },
-  { id: 12, truckId: "TX5566", assignedTo: "Sarah Lee",      jobs: 14, load: 260, lastInspection: "08/08/2025", active: true  },
+  {
+    id: 1,
+    truckId: "TX4578",
+    assignedTo: "Joseph Martin",
+    jobs: 10,
+    load: 220,
+    lastInspection: "10/07/2025",
+    active: true,
+  },
+  {
+    id: 2,
+    truckId: "TX5682",
+    assignedTo: "James Mathew",
+    jobs: 8,
+    load: 200,
+    lastInspection: "14/07/2025",
+    active: true,
+  },
+  {
+    id: 3,
+    truckId: "TX6820",
+    assignedTo: "Alex Robert",
+    jobs: 5,
+    load: 180,
+    lastInspection: "18/07/2025",
+    active: false,
+  },
+  {
+    id: 4,
+    truckId: "TX5973",
+    assignedTo: "Richard Henry",
+    jobs: 9,
+    load: 170,
+    lastInspection: "20/07/2025",
+    active: true,
+  },
+  {
+    id: 5,
+    truckId: "TX6891",
+    assignedTo: "Mike Kim",
+    jobs: 12,
+    load: 190,
+    lastInspection: "22/07/2025",
+    active: false,
+  },
+  {
+    id: 6,
+    truckId: "TX5791",
+    assignedTo: "Charles Wright",
+    jobs: 15,
+    load: 210,
+    lastInspection: "25/07/2025",
+    active: true,
+  },
+  {
+    id: 7,
+    truckId: "TX4579",
+    assignedTo: "James Harry",
+    jobs: 10,
+    load: 230,
+    lastInspection: "27/07/2025",
+    active: true,
+  },
+  {
+    id: 8,
+    truckId: "TX9836",
+    assignedTo: "Joe Tim",
+    jobs: 6,
+    load: 220,
+    lastInspection: "28/07/2025",
+    active: true,
+  },
+  {
+    id: 9,
+    truckId: "TX5762",
+    assignedTo: "Michael George",
+    jobs: 9,
+    load: 240,
+    lastInspection: "30/07/2025",
+    active: false,
+  },
+  {
+    id: 10,
+    truckId: "TX1122",
+    assignedTo: "Maria Chen",
+    jobs: 7,
+    load: 195,
+    lastInspection: "02/08/2025",
+    active: true,
+  },
+  {
+    id: 11,
+    truckId: "TX3344",
+    assignedTo: "Tom Baker",
+    jobs: 4,
+    load: 150,
+    lastInspection: "05/08/2025",
+    active: false,
+  },
+  {
+    id: 12,
+    truckId: "TX5566",
+    assignedTo: "Sarah Lee",
+    jobs: 14,
+    load: 260,
+    lastInspection: "08/08/2025",
+    active: true,
+  },
 ];
 
 const SHOW_OPTIONS = [5, 10, 20, 50];
-
 
 interface StatCardProps {
   label: string;
@@ -73,7 +163,12 @@ interface StatCardProps {
   trendColor?: string;
 }
 
-function StatCard({ label, value, trend, trendColor = "#F97316" }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  trend,
+  trendColor = "#F97316",
+}: StatCardProps) {
   return (
     <div className="flex-1 bg-white rounded-xl border border-[#E5E7EB] px-4 py-4 flex items-center gap-3 min-w-0">
       <div className="w-10 h-10 rounded-lg bg-[#B9D1FF73] border border-[#1D3461] flex items-center justify-center flex-shrink-0">
@@ -81,8 +176,13 @@ function StatCard({ label, value, trend, trendColor = "#F97316" }: StatCardProps
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-1">
-          <p className="text-xs text-[#6B7280] leading-tight truncate">{label}</p>
-          <span className="text-xs font-medium whitespace-nowrap" style={{ color: trendColor }}>
+          <p className="text-xs text-[#6B7280] leading-tight truncate">
+            {label}
+          </p>
+          <span
+            className="text-xs font-medium whitespace-nowrap"
+            style={{ color: trendColor }}
+          >
             ↗ {trend}
           </span>
         </div>
@@ -92,7 +192,13 @@ function StatCard({ label, value, trend, trendColor = "#F97316" }: StatCardProps
   );
 }
 
-function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean) => void }) {
+function Toggle({
+  enabled,
+  onChange,
+}: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <button
       onClick={() => onChange(!enabled)}
@@ -111,13 +217,21 @@ function Toggle({ enabled, onChange }: { enabled: boolean; onChange: (v: boolean
 
 function SortIcon({ dir }: { dir: SortDir }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="inline ml-1 flex-shrink-0">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className="inline ml-1 flex-shrink-0"
+    >
       <path d="M7 2L4 6H10L7 2Z" fill={dir === "asc" ? "#111827" : "#9CA3AF"} />
-      <path d="M7 12L10 8H4L7 12Z" fill={dir === "desc" ? "#111827" : "#9CA3AF"} />
+      <path
+        d="M7 12L10 8H4L7 12Z"
+        fill={dir === "desc" ? "#111827" : "#9CA3AF"}
+      />
     </svg>
   );
 }
-
 
 function SortDropdown({
   selected,
@@ -131,7 +245,8 @@ function SortDropdown({
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -148,17 +263,24 @@ function SortDropdown({
         <ChevronDown size={14} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
+        <div className="absolute sm:right-0 left-0 sm:left-[unset] top-full mt-1 w-52 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt}
-              onClick={() => { onChange(opt); setOpen(false); }}
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
               className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center justify-between ${
-                selected === opt ? "text-[#1D3461] font-medium" : "text-[#374151]"
+                selected === opt
+                  ? "text-[#1D3461] font-medium"
+                  : "text-[#374151]"
               }`}
             >
               {opt}
-              {selected === opt && <Check size={14} className="text-[#1D3461]" />}
+              {selected === opt && (
+                <Check size={14} className="text-[#1D3461]" />
+              )}
             </button>
           ))}
         </div>
@@ -167,25 +289,58 @@ function SortDropdown({
   );
 }
 
-
 function ActionsMenu({ rowId }: { rowId: number }) {
   const [open, setOpen] = useState(false);
   const [successType, setSuccessType] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  console.log(rowId);
+  const [assignDriverOpen, setAssignDriverOpen] =
+  useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const actions = [
-    { label: "View Details",   Icon: Eye,      onClick: () => { console.log("View", rowId); setOpen(false); } },
-    { label: "Edit Truck",     Icon: Edit,     onClick: () => { console.log("Edit", rowId); setOpen(false); } },
-    { label: "Download PDF",   Icon: Download, onClick: () => { setSuccessType("PDF");   setOpen(false); } },
-    { label: "Download Excel", Icon: Download, onClick: () => { setSuccessType("Excel"); setOpen(false); } },
+    {
+      label: "View Details",
+      Icon: Eye,
+      onClick: () => {
+        setDetailsOpen(true);
+        setOpen(false);
+      },
+    },
+    {
+      label: "Mark as Inactive",
+      Icon: XSquare,
+      onClick: () => {
+        setSuccessType("Mark as Inactive");
+        setOpen(false);
+      },
+    },
+ {
+  label: "Assign Driver",
+  Icon: UserCircle,
+  onClick: () => {
+    setAssignDriverOpen(true);
+    setOpen(false);
+  },
+},
+    {
+      label: "Remove Truck",
+      Icon: MinusCircle,
+      onClick: () => {
+        setSuccessType("Truck Removed");
+        setOpen(false);
+      },
+    },
   ];
 
   return (
@@ -195,7 +350,7 @@ function ActionsMenu({ rowId }: { rowId: number }) {
           onClick={() => setOpen((o) => !o)}
           className="p-1.5 rounded-md text-[#9CA3AF] hover:text-[#374151] hover:bg-gray-100 border border-[#E8E8E8] transition-colors"
         >
-          <Smile size={16} />
+          <MoreHorizontal size={16} />
         </button>
         {open && (
           <div className="absolute right-0 mt-1 w-[180px] bg-white border border-[#E5E7EB] rounded-xl shadow-lg z-20 py-1 overflow-hidden">
@@ -215,6 +370,26 @@ function ActionsMenu({ rowId }: { rowId: number }) {
         )}
       </div>
 
+      <TruckDetailsModal
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        onPreview={() => setPreviewOpen(true)}
+      />
+
+      <DocumentPreviewModal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        imageUrl={truckDetails}
+      />
+
+      <AssignDriverModal
+  open={assignDriverOpen}
+  onClose={() => setAssignDriverOpen(false)}
+  onAssign={(data) => {
+    console.log("Assigned:", data);
+  }}
+/>
+
       {successType && (
         <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
           <div className="w-[520px] bg-white rounded-lg border border-[#D9D9D9] px-8 py-14 flex flex-col items-center relative">
@@ -228,7 +403,7 @@ function ActionsMenu({ rowId }: { rowId: number }) {
               <Check size={32} className="text-white stroke-[3]" />
             </div>
             <h2 className="mt-10 text-[16px] text-center font-normal text-[#000]">
-              {successType} Downloaded
+              {successType}
             </h2>
           </div>
         </div>
@@ -237,12 +412,13 @@ function ActionsMenu({ rowId }: { rowId: number }) {
   );
 }
 
-
 function DownloadModal({ onClose }: { onClose: () => void }) {
   const [successType, setSuccessType] = useState<string | null>(null);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -276,7 +452,10 @@ function DownloadModal({ onClose }: { onClose: () => void }) {
       >
         <div className="px-8 py-6 border-b border-[#E5E5E5] flex justify-between items-center">
           <h2 className="text-xl font-semibold text-[#111827]">Download as</h2>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-gray-100 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+          >
             <X size={20} className="text-[#111827]" />
           </button>
         </div>
@@ -290,7 +469,9 @@ function DownloadModal({ onClose }: { onClose: () => void }) {
               alt="pdf"
               className="w-8 h-8 object-contain"
             />
-            <span className="text-base font-medium text-[#444444]">Download as PDF</span>
+            <span className="text-base font-medium text-[#444444]">
+              Download as PDF
+            </span>
           </button>
           <button
             onClick={() => setSuccessType("Excel")}
@@ -301,14 +482,15 @@ function DownloadModal({ onClose }: { onClose: () => void }) {
               alt="excel"
               className="w-8 h-8 object-contain"
             />
-            <span className="text-base font-medium text-[#444444]">Download as Excel</span>
+            <span className="text-base font-medium text-[#444444]">
+              Download as Excel
+            </span>
           </button>
         </div>
       </div>
     </div>
   );
 }
-
 
 interface AddTruckModalProps {
   onClose: () => void;
@@ -324,7 +506,9 @@ function AddTruckModal({ onClose, onAdd }: AddTruckModalProps) {
   });
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -336,7 +520,9 @@ function AddTruckModal({ onClose, onAdd }: AddTruckModalProps) {
       assignedTo: form.assignedTo.trim(),
       jobs: parseInt(form.jobs) || 0,
       load: parseInt(form.load) || 0,
-      lastInspection: new Date().toLocaleDateString("en-GB").replace(/\//g, "/"),
+      lastInspection: new Date()
+        .toLocaleDateString("en-GB")
+        .replace(/\//g, "/"),
       active: true,
     });
     onClose();
@@ -353,49 +539,68 @@ function AddTruckModal({ onClose, onAdd }: AddTruckModalProps) {
       >
         <div className="px-8 py-6 border-b border-[#E5E5E5] flex justify-between items-center">
           <h2 className="text-xl font-semibold text-[#111827]">Add Truck</h2>
-          <button onClick={onClose} className="p-1 rounded-md hover:bg-gray-100 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+          >
             <X size={20} className="text-[#111827]" />
           </button>
         </div>
         <div className="p-8 flex flex-col gap-4">
           <div>
-            <label className="text-xs text-[#6B7280] block mb-1.5">Truck ID</label>
+            <label className="text-xs text-[#6B7280] block mb-1.5">
+              Truck ID
+            </label>
             <input
               type="text"
               placeholder="e.g. TX9900"
               value={form.truckId}
-              onChange={(e) => setForm((p) => ({ ...p, truckId: e.target.value }))}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, truckId: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#111827] outline-none placeholder-[#9CA3AF]"
             />
           </div>
           <div>
-            <label className="text-xs text-[#6B7280] block mb-1.5">Assigned To</label>
+            <label className="text-xs text-[#6B7280] block mb-1.5">
+              Assigned To
+            </label>
             <input
               type="text"
               placeholder="Driver name"
               value={form.assignedTo}
-              onChange={(e) => setForm((p) => ({ ...p, assignedTo: e.target.value }))}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, assignedTo: e.target.value }))
+              }
               className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#111827] outline-none placeholder-[#9CA3AF]"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-[#6B7280] block mb-1.5">Jobs</label>
+              <label className="text-xs text-[#6B7280] block mb-1.5">
+                Jobs
+              </label>
               <input
                 type="number"
                 placeholder="0"
                 value={form.jobs}
-                onChange={(e) => setForm((p) => ({ ...p, jobs: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, jobs: e.target.value }))
+                }
                 className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#111827] outline-none placeholder-[#9CA3AF]"
               />
             </div>
             <div>
-              <label className="text-xs text-[#6B7280] block mb-1.5">Load (Tons)</label>
+              <label className="text-xs text-[#6B7280] block mb-1.5">
+                Load (Tons)
+              </label>
               <input
                 type="number"
                 placeholder="0"
                 value={form.load}
-                onChange={(e) => setForm((p) => ({ ...p, load: e.target.value }))}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, load: e.target.value }))
+                }
                 className="w-full px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#111827] outline-none placeholder-[#9CA3AF]"
               />
             </div>
@@ -412,7 +617,6 @@ function AddTruckModal({ onClose, onAdd }: AddTruckModalProps) {
   );
 }
 
-
 function Pagination({
   currentPage,
   totalPages,
@@ -423,14 +627,31 @@ function Pagination({
   onPageChange: (p: number) => void;
 }) {
   function getPages(): (number | "...")[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (totalPages <= 7)
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     const pages: (number | "...")[] = [];
     if (currentPage <= 4) {
       pages.push(1, 2, 3, 4, 5, "...", totalPages);
     } else if (currentPage >= totalPages - 3) {
-      pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      pages.push(
+        1,
+        "...",
+        totalPages - 4,
+        totalPages - 3,
+        totalPages - 2,
+        totalPages - 1,
+        totalPages,
+      );
     } else {
-      pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+      pages.push(
+        1,
+        "...",
+        currentPage - 1,
+        currentPage,
+        currentPage + 1,
+        "...",
+        totalPages,
+      );
     }
     return pages;
   }
@@ -444,16 +665,27 @@ function Pagination({
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         className={`${btn} border border-[#E5E7EB] bg-white ${
-          currentPage === 1 ? "text-[#D1D5DB] cursor-not-allowed" : "text-[#374151] hover:bg-gray-50"
+          currentPage === 1
+            ? "text-[#D1D5DB] cursor-not-allowed"
+            : "text-[#374151] hover:bg-gray-50"
         }`}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M10 12L6 8l4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
       {getPages().map((p, i) =>
         p === "..." ? (
-          <span key={`e${i}`} className="w-9 h-9 flex items-center justify-center text-[#9CA3AF] text-sm">
+          <span
+            key={`e${i}`}
+            className="w-9 h-9 flex items-center justify-center text-[#9CA3AF] text-sm"
+          >
             …
           </span>
         ) : (
@@ -468,54 +700,62 @@ function Pagination({
           >
             {p}
           </button>
-        )
+        ),
       )}
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         className={`${btn} border border-[#E5E7EB] bg-white ${
-          currentPage === totalPages ? "text-[#D1D5DB] cursor-not-allowed" : "text-[#374151] hover:bg-gray-50"
+          currentPage === totalPages
+            ? "text-[#D1D5DB] cursor-not-allowed"
+            : "text-[#374151] hover:bg-gray-50"
         }`}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d="M6 4l4 4-4 4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
     </div>
   );
 }
 
-
 const COLUMNS: { key: SortKey; label: string }[] = [
-  { key: "truckId",        label: "Truck ID"         },
-  { key: "assignedTo",     label: "Assigned To"      },
-  { key: "jobs",           label: "Jobs"             },
-  { key: "load",           label: "Load This Month"  },
-  { key: "lastInspection", label: "Last Inspection"  },
+  { key: "truckId", label: "Truck ID" },
+  { key: "assignedTo", label: "Assigned To" },
+  { key: "jobs", label: "Jobs" },
+  { key: "load", label: "Load This Month" },
+  { key: "lastInspection", label: "Last Inspection" },
 ];
 
-
 export default function TruckDetailsPage() {
-  const [trucks, setTrucks]             = useState<TruckRow[]>(INITIAL_TRUCKS);
-  const [search, setSearch]             = useState("");
-  const [showEntries, setShowEntries]   = useState(10);
-  const [currentPage, setCurrentPage]   = useState(1);
+  const [trucks, setTrucks] = useState<TruckRow[]>(INITIAL_TRUCKS);
+  const [search, setSearch] = useState("");
+  const [showEntries, setShowEntries] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
-  const [sortKey, setSortKey]           = useState<SortKey | null>(null);
-  const [sortDir, setSortDir]           = useState<SortDir>(null);
-  const [sortBy, setSortBy]             = useState<SortOption | undefined>(undefined);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [sortBy, setSortBy] = useState<SortOption | undefined>(undefined);
   const [downloadOpen, setDownloadOpen] = useState(false);
-  const [addOpen, setAddOpen]           = useState(false);
-  const [bulkOpen, setBulkOpen]         = useState(false);
-  const bulkRef                         = useRef<HTMLDivElement>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const bulkRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // Reset to page 1 on filter/sort change
-  useEffect(() => { setCurrentPage(1); }, [search, showEntries, sortBy]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, showEntries, sortBy]);
 
-  // Close bulk dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (bulkRef.current && !bulkRef.current.contains(e.target as Node)) setBulkOpen(false);
+      if (bulkRef.current && !bulkRef.current.contains(e.target as Node))
+        setBulkOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -524,12 +764,8 @@ export default function TruckDetailsPage() {
   function applySortOption(opt: SortOption) {
     setSortBy(opt);
     const map: Record<SortOption, { key: SortKey; dir: SortDir }> = {
-      "Truck ID (A-Z)":      { key: "truckId",    dir: "asc"  },
-      "Truck ID (Z-A)":      { key: "truckId",    dir: "desc" },
-      "Name (A-Z)":          { key: "assignedTo", dir: "asc"  },
-      "Name (Z-A)":          { key: "assignedTo", dir: "desc" },
-      "Jobs (Most First)":   { key: "jobs",       dir: "desc" },
-      "Jobs (Least First)":  { key: "jobs",       dir: "asc"  },
+      "Inspection (Earliest)": { key: "truckId", dir: "asc" },
+      "Inspection (Latest)": { key: "truckId", dir: "desc" },
     };
     setSortKey(map[opt].key);
     setSortDir(map[opt].dir);
@@ -537,15 +773,21 @@ export default function TruckDetailsPage() {
 
   function handleSort(key: SortKey) {
     setSortBy(undefined);
-    if (sortKey !== key) { setSortKey(key); setSortDir("asc"); }
-    else if (sortDir === "asc") setSortDir("desc");
-    else { setSortKey(null); setSortDir(null); }
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") setSortDir("desc");
+    else {
+      setSortKey(null);
+      setSortDir(null);
+    }
   }
 
   const filtered = [...trucks]
-    .filter((t) =>
-      t.truckId.toLowerCase().includes(search.toLowerCase()) ||
-      t.assignedTo.toLowerCase().includes(search.toLowerCase())
+    .filter(
+      (t) =>
+        t.truckId.toLowerCase().includes(search.toLowerCase()) ||
+        t.assignedTo.toLowerCase().includes(search.toLowerCase()),
     )
     .sort((a, b) => {
       if (!sortKey || !sortDir) return 0;
@@ -559,15 +801,20 @@ export default function TruckDetailsPage() {
     });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / showEntries));
-  const safePage   = Math.min(currentPage, totalPages);
-  const paginated  = filtered.slice((safePage - 1) * showEntries, safePage * showEntries);
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice(
+    (safePage - 1) * showEntries,
+    safePage * showEntries,
+  );
 
-  const total    = trucks.length;
-  const active   = trucks.filter((t) => t.active).length;
+  const total = trucks.length;
+  const active = trucks.filter((t) => t.active).length;
   const inactive = trucks.filter((t) => !t.active).length;
 
   function updateTruckStatus(id: number, value: boolean) {
-    setTrucks((prev) => prev.map((t) => (t.id === id ? { ...t, active: value } : t)));
+    setTrucks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, active: value } : t)),
+    );
   }
 
   function addTruck(data: Omit<TruckRow, "id">) {
@@ -575,34 +822,40 @@ export default function TruckDetailsPage() {
     setTrucks((prev) => [...prev, { id: newId, ...data }]);
   }
 
-  const allSelected  = paginated.length > 0 && paginated.every((r) => selectedRows.includes(r.id));
-  const someSelected = paginated.some((r) => selectedRows.includes(r.id)) && !allSelected;
+  const allSelected =
+    paginated.length > 0 && paginated.every((r) => selectedRows.includes(r.id));
+  const someSelected =
+    paginated.some((r) => selectedRows.includes(r.id)) && !allSelected;
 
   function toggleAll() {
     if (allSelected)
-      setSelectedRows((prev) => prev.filter((id) => !paginated.find((r) => r.id === id)));
+      setSelectedRows((prev) =>
+        prev.filter((id) => !paginated.find((r) => r.id === id)),
+      );
     else
-      setSelectedRows((prev) => [...new Set([...prev, ...paginated.map((r) => r.id)])]);
+      setSelectedRows((prev) => [
+        ...new Set([...prev, ...paginated.map((r) => r.id)]),
+      ]);
   }
 
   function toggleRow(id: number) {
     setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
 
-
   return (
     <div className="bg-[#F3F4F6]">
-
-      <div className="flex items-start justify-between mb-5">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-5">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">Truck Details</h1>
-          <p className="text-sm text-[#707070] mt-0.5">Manage your fleet of trucks and assignments</p>
+          <p className="text-sm text-[#707070] mt-0.5">
+            Manage your fleet of trucks and assignments
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setAddOpen(true)}
+          onClick={() => navigate("/dashboard/trucks/add")}
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors"
           >
             <Plus size={15} /> Add Truck
@@ -619,19 +872,41 @@ export default function TruckDetailsPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 mb-5">
-        <StatCard label="Total Trucks"    value={total}    trend="+19.01%" trendColor="#F97316" />
-        <StatCard label="Active Trucks"   value={active}   trend="+19.01%" trendColor="#F97316" />
-        <StatCard label="Inactive Trucks" value={inactive} trend="+19.01%" trendColor="#F97316" />
-        <StatCard label="Assigned Aliases" value={20}      trend="+19.01%" trendColor="#3B82F6" />
+      <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
+        <StatCard
+          label="Total Trucks"
+          value={total}
+          trend="+19.01%"
+          trendColor="#F97316"
+        />
+        <StatCard
+          label="Active Trucks"
+          value={active}
+          trend="+19.01%"
+          trendColor="#F97316"
+        />
+        <StatCard
+          label="Inactive Trucks"
+          value={inactive}
+          trend="+19.01%"
+          trendColor="#F97316"
+        />
+        <StatCard
+          label="Assigned Aliases"
+          value={20}
+          trend="+19.01%"
+          trendColor="#3B82F6"
+        />
       </div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
-
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E7EB]">
+        <div className="flex items-center gap-3 flex-wrap justify-between px-5 py-4 border-b border-[#E5E7EB]">
           <h2 className="text-base font-semibold text-[#111827]">Truck list</h2>
           <div className="relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]"
+            />
             <input
               type="text"
               placeholder="Search Truck"
@@ -642,18 +917,23 @@ export default function TruckDetailsPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#E5E7EB]">
-          <div className="flex items-center gap-3">
+        <div className="flex sm:items-center gap-3 sm:flex-row flex-col justify-between px-5 py-3 border-b border-[#E5E7EB]">
+          <div className="flex items-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 px-3 py-1.5 border border-[#E5E7EB] rounded-lg">
               <input
                 type="checkbox"
                 id="selectall"
                 checked={allSelected}
-                ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                ref={(el) => {
+                  if (el) el.indeterminate = someSelected;
+                }}
                 onChange={toggleAll}
                 className="w-4 h-4 rounded border-[#D1D5DB] accent-[#1E2A4A] cursor-pointer"
               />
-              <label htmlFor="selectall" className="text-sm text-[#374151] cursor-pointer">
+              <label
+                htmlFor="selectall"
+                className="text-sm text-[#374151] cursor-pointer"
+              >
                 Select All
               </label>
             </div>
@@ -667,7 +947,11 @@ export default function TruckDetailsPage() {
               </button>
               {bulkOpen && (
                 <div className="absolute left-0 top-full mt-1 w-44 bg-white rounded-lg border border-[#E5E7EB] shadow-lg py-1 z-50">
-                  {["Activate Selected", "Deactivate Selected", "Delete Selected"].map((item) => (
+                  {[
+                    "Activate Selected",
+                    "Deactivate Selected",
+                    "Delete Selected",
+                  ].map((item) => (
                     <button
                       key={item}
                       onClick={() => setBulkOpen(false)}
@@ -692,7 +976,9 @@ export default function TruckDetailsPage() {
                   <input
                     type="checkbox"
                     checked={allSelected}
-                    ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected;
+                    }}
                     onChange={toggleAll}
                     className="w-4 h-4 rounded border-[#D1D5DB] accent-[#1E2A4A] cursor-pointer"
                   />
@@ -721,7 +1007,10 @@ export default function TruckDetailsPage() {
             <tbody className="divide-y divide-[#E5E7EB]">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-[#9CA3AF]">
+                  <td
+                    colSpan={8}
+                    className="px-6 py-12 text-center text-[#9CA3AF]"
+                  >
                     No records match your search.
                   </td>
                 </tr>
@@ -744,12 +1033,18 @@ export default function TruckDetailsPage() {
                     <td className="px-3 py-3.5 font-semibold text-[#1F2020] whitespace-nowrap">
                       {row.truckId}
                     </td>
-                    <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.assignedTo}</td>
+                    <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">
+                      {row.assignedTo}
+                    </td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">
                       {String(row.jobs).padStart(2, "0")}
                     </td>
-                    <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.load} Tons</td>
-                    <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.lastInspection}</td>
+                    <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">
+                      {row.load} Tons
+                    </td>
+                    <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">
+                      {row.lastInspection}
+                    </td>
                     <td className="px-3 py-3.5">
                       <div className="flex items-center gap-2">
                         <Toggle
@@ -780,11 +1075,16 @@ export default function TruckDetailsPage() {
             <span>Show</span>
             <select
               value={showEntries}
-              onChange={(e) => { setShowEntries(Number(e.target.value)); setCurrentPage(1); }}
+              onChange={(e) => {
+                setShowEntries(Number(e.target.value));
+                setCurrentPage(1);
+              }}
               className="border border-[#E5E7EB] rounded-md px-2 py-1 text-sm text-[#111827] outline-none cursor-pointer"
             >
               {SHOW_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
             </select>
             <span>Entries</span>
@@ -798,7 +1098,9 @@ export default function TruckDetailsPage() {
       </div>
 
       {downloadOpen && <DownloadModal onClose={() => setDownloadOpen(false)} />}
-      {addOpen      && <AddTruckModal onClose={() => setAddOpen(false)} onAdd={addTruck} />}
+      {addOpen && (
+        <AddTruckModal onClose={() => setAddOpen(false)} onAdd={addTruck} />
+      )}
     </div>
   );
 }

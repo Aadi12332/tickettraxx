@@ -122,7 +122,7 @@ export const AssignLoadPage = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-[24px] font-bold text-[#111827]">Assign Loads</h1>
         <div
           onClick={() => setOpenDateModal(true)}
@@ -163,7 +163,7 @@ export const AssignLoadPage = () => {
               key={load.id}
               className="rounded-lg border border-[#D9D9D9] bg-white p-4"
             >
-              <div className="grid grid-cols-[1.2fr_1fr_.8fr_1fr_.8fr_1.2fr_2fr_2fr] gap-3">
+              <div className="grid lg:grid-cols-[1.2fr_1fr_.8fr_1fr_.8fr_1.2fr_2fr_2fr] md:grid-cols-3 grid-cols-2 gap-3">
                 <div>
                   <p className="text-[14px] font-semibold text-[#3D3D3D]">
                     Customer
@@ -255,8 +255,8 @@ export const AssignLoadPage = () => {
                 </div>
               </div>
 
-              <div className="mt-8 grid grid-cols-[1.5fr_1.2fr_1fr_0.7fr] gap-6 items-center">
-                <div className="flex items-center gap-3 text-[#111827]">
+              <div className="mt-8 grid xl:grid-cols-[1.5fr_1.2fr_1fr_0.7fr] md:grid-cols-2 grid-cols-1 xl:gap-6 gap-3 items-center">
+                <div className="flex md:items-center lg:gap-3 gap-2 md:flex-row flex-col text-[#111827]">
                   <label className="text-[14px] text-[#7B7B7B] inline-block min-w-max">
                     Select Driver
                   </label>
@@ -270,7 +270,7 @@ export const AssignLoadPage = () => {
                   />
                 </div>
 
-                <div className="flex items-center gap-3 text-[#111827]">
+                <div className="flex md:items-center lg:gap-3 gap-2 md:flex-row flex-col text-[#111827]">
                   <label className="text-[14px] text-[#7B7B7B]">Truck</label>
 
                   <CustomSettlementSelect
@@ -282,7 +282,7 @@ export const AssignLoadPage = () => {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex md:items-center lg:gap-3 gap-2 md:flex-row flex-col">
                   <label className="text-[14px] text-[#7B7B7B]">Quantity</label>
 
                   <input
