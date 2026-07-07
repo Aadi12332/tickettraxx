@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import {
   Download,
   RefreshCw,
-  Truck,
   Filter,
   ChevronDown,
   Plus,
@@ -16,6 +15,7 @@ import {
   MinusCircle,
   UserCircle,
   XSquare,
+  Users, UserCheck, UserX, UserPlus
 } from "lucide-react";
 import { TruckDetailsModal } from "./TruckDetailsModal";
 import DocumentPreviewModal from "./DocumentPreviewModal";
@@ -160,34 +160,42 @@ interface StatCardProps {
   label: string;
   value: string | number;
   trend: string;
-  trendColor?: string;
+  trendBg: string;
+  trendColor: string;
+  icon: React.ReactNode;
 }
 
 function StatCard({
   label,
   value,
   trend,
-  trendColor = "#F97316",
+  trendBg,
+  trendColor,
+  icon,
 }: StatCardProps) {
   return (
-    <div className="flex-1 bg-white rounded-xl border border-[#E5E7EB] px-4 py-4 flex items-center gap-3 min-w-0">
-      <div className="w-10 h-10 rounded-lg bg-[#B9D1FF73] border border-[#1D3461] flex items-center justify-center flex-shrink-0">
-        <Truck size={16} className="text-[#1D3461]" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-1">
+    <div className="bg-white rounded-xl border border-[#E5E7EB] px-4 py-4 flex items-center justify-between gap-3 min-w-0">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE] flex items-center justify-center flex-shrink-0">
+          {icon}
+        </div>
+
+        <div className="min-w-0">
           <p className="text-xs text-[#6B7280] leading-tight truncate">
             {label}
           </p>
-          <span
-            className="text-xs font-medium whitespace-nowrap"
-            style={{ color: trendColor }}
-          >
-            ↗ {trend}
-          </span>
+          <p className="text-[16px] font-bold text-[#111827] mt-1 leading-none">
+            {value}
+          </p>
         </div>
-        <p className="text-[18px] font-bold text-[#111827] mt-0.5">{value}</p>
       </div>
+
+      <span
+        className="text-xs font-medium whitespace-nowrap flex items-center gap-1 px-2 py-1 rounded-full shrink-0"
+        style={{ background: trendBg, color: trendColor }}
+      >
+        ↗ {trend}
+      </span>
     </div>
   );
 }
@@ -872,32 +880,40 @@ export default function TruckDetailsPage() {
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
-        <StatCard
-          label="Total Trucks"
-          value={total}
-          trend="+19.01%"
-          trendColor="#F97316"
-        />
-        <StatCard
-          label="Active Trucks"
-          value={active}
-          trend="+19.01%"
-          trendColor="#F97316"
-        />
-        <StatCard
-          label="Inactive Trucks"
-          value={inactive}
-          trend="+19.01%"
-          trendColor="#F97316"
-        />
-        <StatCard
-          label="Assigned Aliases"
-          value={20}
-          trend="+19.01%"
-          trendColor="#3B82F6"
-        />
-      </div>
+    <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
+  <StatCard
+    label="Total Trucks"
+    value={total}
+    trend="+19.01%"
+    trendBg="#F3E8FF"
+    trendColor="#9333EA"
+    icon={<Users size={18} className="text-[#1D3461]" />}
+  />
+  <StatCard
+    label="Active Trucks"
+    value={active}
+    trend="+19.01%"
+    trendBg="#FFEDD5"
+    trendColor="#EA580C"
+    icon={<UserCheck size={18} className="text-[#1D3461]" />}
+  />
+  <StatCard
+    label="Inactive Trucks"
+    value={inactive}
+    trend="+19.01%"
+    trendBg="#F1F5F9"
+    trendColor="#475569"
+    icon={<UserX size={18} className="text-[#1D3461]" />}
+  />
+  <StatCard
+    label="Assigned Aliases"
+    value={20}
+    trend="+19.01%"
+    trendBg="#DBEAFE"
+    trendColor="#2563EB"
+    icon={<UserPlus size={18} className="text-[#1D3461]" />}
+  />
+</div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="flex items-center gap-3 flex-wrap justify-between px-5 py-4 border-b border-[#E5E7EB]">

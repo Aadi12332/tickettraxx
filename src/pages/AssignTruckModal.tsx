@@ -1,4 +1,8 @@
 import { Calendar, ChevronDown, X } from "lucide-react";
+import DateRangeModal from "./DateRangeModal";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
+import { useState } from "react";
 
 interface AssignTruckModalProps {
   open: boolean;
@@ -11,6 +15,10 @@ export default function AssignTruckModal({
   onClose,
   onAssign,
 }: AssignTruckModalProps) {
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [datePickerOpen, setDatePickerOpen] = useState<"start" | "end" | null>(
+      null,
+    );
   if (!open) return null;
 
   return (
@@ -97,10 +105,36 @@ export default function AssignTruckModal({
               Assign From Date
             </label>
 
-            <button className="flex items-center gap-3 border border-[#D1D5DB] rounded-lg px-4 py-2.5 w-full text-[#6B7280]">
-              <Calendar size={20} />
-              <span>Select Date</span>
-            </button>
+           <button
+  onClick={() => setDatePickerOpen("start")}
+  className="flex items-center justify-between border border-[#D1D5DB] rounded-lg px-4 py-2.5 w-full"
+>
+  <div className="flex items-center gap-3">
+    <Calendar size={20} className="text-[#6B7280]" />
+
+    <span
+      className={`text-sm ${
+        dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"
+      }`}
+    >
+      {dateRange?.from
+        ? format(dateRange.from, "MM/dd/yyyy")
+        : "mm/dd/yyyy"}
+    </span>
+  </div>
+</button>
+
+{datePickerOpen && (
+  <DateRangeModal
+    open={!!datePickerOpen}
+    onClose={() => setDatePickerOpen(null)}
+    value={dateRange}
+    onChange={(range) => {
+      setDateRange(range);
+      setDatePickerOpen(null);
+    }}
+  />
+)}
           </div>
         </div>
 

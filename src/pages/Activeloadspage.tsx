@@ -12,6 +12,9 @@ import {
 import { TicketApprovalModal } from "./TicketApprovalModal";
 import { NotDeliveredModal } from "./NotDeliveredModal";
 import { FilterDropdown } from "./Activeloadstable";
+import DateRangeModal from "./DateRangeModal";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 
 interface LoadRow {
   id: number;
@@ -253,6 +256,7 @@ export default function ActiveLoadsPage() {
   const [payPeriod, setPayPeriod] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate]     = useState("");
+  console.log(setStartDate, setEndDate);
   const [driver, setDriver]       = useState("");
   const [appliedFilters, setAppliedFilters] = useState({ payPeriod: "", startDate: "", endDate: "", driver: "" });
 
@@ -294,6 +298,11 @@ export default function ActiveLoadsPage() {
     setSelectedRows((p) => p.includes(id) ? p.filter((x) => x !== id) : [...p, id]);
   }
 
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [datePickerOpen, setDatePickerOpen] = useState<"start" | "end" | null>(
+    null,
+  );
+
   return (
     <div className="bg-[#F3F4F6]">
 
@@ -313,13 +322,13 @@ export default function ActiveLoadsPage() {
       </div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] px-5 py-4 mb-5 grid xl:grid-cols-4 sm:grid-cols-2 grid-cols-1 items-end gap-3">
-        <div className="flex flex-col gap-1 flex-1">
+        <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-3 py-2.5">
           <label className="text-xs text-[#6B7280]">Pay Period</label>
           <div className="relative">
             <select
               value={payPeriod}
               onChange={(e) => setPayPeriod(e.target.value)}
-              className="w-full appearance-none border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] outline-none cursor-pointer bg-white pr-8"
+              className="w-full appearance-none text-sm text-[#111827] outline-none cursor-pointer bg-white pr-8"
             >
               <option value="">Select one</option>
               {PAY_PERIODS.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -328,44 +337,60 @@ export default function ActiveLoadsPage() {
           </div>
         </div>
 
-        {/* Start Date */}
-        <div className="flex flex-col gap-1 flex-1">
+        <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-4 py-2.5">
           <label className="text-xs text-[#6B7280]">Start date</label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="mm/dd/yyyy"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] outline-none bg-white pr-9"
-            />
-            <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
-          </div>
+          <button
+            onClick={() => setDatePickerOpen("start")}
+            className="flex items-center justify-between w-full text-sm bg-white text-left"
+          >
+            <span
+              className={dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"}
+            >
+              {dateRange?.from
+                ? format(dateRange.from, "MM/dd/yyyy")
+                : "mm/dd/yyyy"}
+            </span>
+            <Calendar className="text-[#6B7280]" size={14} />
+          </button>
         </div>
 
-        {/* End Date */}
-        <div className="flex flex-col gap-1 flex-1">
+        <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-4 py-2.5">
           <label className="text-xs text-[#6B7280]">End date</label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="mm/dd/yyyy"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] placeholder-[#9CA3AF] outline-none bg-white pr-9"
-            />
-            <Calendar size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] pointer-events-none" />
-          </div>
+          <button
+            onClick={() => setDatePickerOpen("end")}
+            className="flex items-center justify-between w-full text-sm bg-white text-left"
+          >
+            <span
+              className={dateRange?.to ? "text-[#111827]" : "text-[#9CA3AF]"}
+            >
+              {dateRange?.to
+                ? format(dateRange.to, "MM/dd/yyyy")
+                : "mm/dd/yyyy"}
+            </span>
+            <Calendar className="text-[#6B7280]" size={14} />
+          </button>
         </div>
+
+        {datePickerOpen && (
+          <DateRangeModal
+            open={!!datePickerOpen}
+            onClose={() => setDatePickerOpen(null)}
+            value={dateRange}
+            onChange={(range) => {
+              setDateRange(range);
+              setDatePickerOpen(null);
+            }}
+          />
+        )}
 
         {/* Driver */}
-        <div className="flex flex-col gap-1 flex-1">
+        <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-3 py-2.5">
           <label className="text-xs text-[#6B7280]">Driver</label>
           <div className="relative">
             <select
               value={driver}
               onChange={(e) => setDriver(e.target.value)}
-              className="w-full appearance-none border border-[#E5E7EB] rounded-lg px-3 py-2.5 text-sm text-[#111827] outline-none cursor-pointer bg-white pr-8"
+              className="w-full appearance-none text-sm text-[#111827] outline-none cursor-pointer bg-white pr-8"
             >
               <option value="">Select one</option>
               {DRIVERS.map((d) => <option key={d} value={d}>{d}</option>)}

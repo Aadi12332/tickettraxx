@@ -1,13 +1,13 @@
-import { X, ChevronDown } from "lucide-react";
+import { X, ChevronDown, Calendar } from "lucide-react";
 import { useState } from "react";
+import DateRangeModal from "./DateRangeModal";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 
 interface AssignDriverModalProps {
   open: boolean;
   onClose: () => void;
-  onAssign?: (data: {
-    driver: string;
-    assignDate: string;
-  }) => void;
+  onAssign?: (data: { driver: string; assignDate: string }) => void;
 }
 
 export const AssignDriverModal = ({
@@ -17,7 +17,11 @@ export const AssignDriverModal = ({
 }: AssignDriverModalProps) => {
   const [driver, setDriver] = useState("");
   const [assignDate, setAssignDate] = useState("");
-
+  console.log(setAssignDate);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [datePickerOpen, setDatePickerOpen] = useState<"start" | "end" | null>(
+    null,
+  );
   if (!open) return null;
 
   const handleAssign = () => {
@@ -33,9 +37,7 @@ export const AssignDriverModal = ({
     <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
       <div className="bg-white w-full max-w-[648px] rounded-xl overflow-hidden text-[#1F2020]">
         <div className="flex items-center justify-between px-4 py-3 border-b">
-          <h2 className="text-[20px] font-semibold">
-            Assign Driver
-          </h2>
+          <h2 className="text-[20px] font-semibold">Assign Driver</h2>
 
           <button onClick={onClose}>
             <X size={20} />
@@ -52,13 +54,9 @@ export const AssignDriverModal = ({
               />
 
               <div>
-                <h3 className="text-sm font-medium">
-                  Unit No : 215
-                </h3>
+                <h3 className="text-sm font-medium">Unit No : 215</h3>
 
-                <p className="text-base text-gray-500">
-                  Plate: TX-78A23
-                </p>
+                <p className="text-base text-gray-500">Plate: TX-78A23</p>
               </div>
             </div>
 
@@ -76,18 +74,12 @@ export const AssignDriverModal = ({
               <select
                 value={driver}
                 onChange={(e) => setDriver(e.target.value)}
-                className="w-full border rounded-lg px-4 py-3 appearance-none text-sm"
+                className="w-full border rounded-lg px-4 py-3 appearance-none text-sm outline-none"
               >
                 <option value="">Select one</option>
-                <option value="John Miller">
-                  John Miller
-                </option>
-                <option value="Robert Davies">
-                  Robert Davies
-                </option>
-                <option value="Maria Gomez">
-                  Maria Gomez
-                </option>
+                <option value="John Miller">John Miller</option>
+                <option value="Robert Davies">Robert Davies</option>
+                <option value="Maria Gomez">Maria Gomez</option>
               </select>
 
               <ChevronDown
@@ -102,17 +94,36 @@ export const AssignDriverModal = ({
               Assign From Date
             </label>
 
-            <div className="relative w-full">
+            <button
+              onClick={() => setDatePickerOpen("start")}
+              className="flex items-center justify-between border border-[#D1D5DB] rounded-lg px-4 py-2.5 w-full"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar size={20} className="text-[#6B7280]" />
 
-              <input
-                type="date"
-                value={assignDate}
-                onChange={(e) =>
-                  setAssignDate(e.target.value)
-                }
-                className="w-full border rounded-lg px-4 py-3 text-sm"
+                <span
+                  className={`text-sm ${
+                    dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"
+                  }`}
+                >
+                  {dateRange?.from
+                    ? format(dateRange.from, "MM/dd/yyyy")
+                    : "mm/dd/yyyy"}
+                </span>
+              </div>
+            </button>
+
+            {datePickerOpen && (
+              <DateRangeModal
+                open={!!datePickerOpen}
+                onClose={() => setDatePickerOpen(null)}
+                value={dateRange}
+                onChange={(range) => {
+                  setDateRange(range);
+                  setDatePickerOpen(null);
+                }}
               />
-            </div>
+            )}
           </div>
         </div>
 

@@ -78,20 +78,42 @@ interface StatCardProps {
   trend: string;
   trendColor?: string;
 }
-function StatCard({ icon, label, value, trend, trendColor = "#F97316" }: StatCardProps) {
+
+function StatCard({
+  icon,
+  label,
+  value,
+  trend,
+  trendColor = "#F97316",
+}: StatCardProps) {
   return (
-    <div className="flex-1 bg-white rounded-xl border border-[#E5E7EB] px-4 py-4 flex items-center gap-3 min-w-0">
-      <div className="w-10 h-10 rounded-lg bg-[#B9D1FF73] border border-[#1D3461] flex items-center justify-center flex-shrink-0">
-        {icon}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-1">
-          <p className="text-xs text-[#6B7280] leading-tight truncate">{label}</p>
-          <span className="text-xs font-medium whitespace-nowrap" style={{ color: trendColor }}>
-            ↗ {trend}
-          </span>
+    <div className="bg-white border border-[#E5E7EB] rounded-xl px-4 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="w-[40px] h-[40px] rounded-lg border border-[#1D3461] bg-[#EAF1FF] flex items-center justify-center shrink-0">
+          {icon}
         </div>
-        <p className="text-[18px] font-bold text-[#111827] mt-0.5">{value}</p>
+
+        <div>
+          <p className="text-[12px] font-medium text-[#6B7280]">
+            {label}
+          </p>
+
+          <h2 className="text-[16px] leading-none mt-1 font-bold text-[#111827]">
+            {value}
+          </h2>
+        </div>
+      </div>
+
+      <div
+        className="px-2 py-1 rounded-full text-[12px] font-semibold flex items-center gap-1"
+        style={{
+          color: trendColor,
+          backgroundColor:
+            trendColor === "#3B82F6" ? "#EEF5FF" : "#FFF4EC",
+        }}
+      >
+        <span>↗</span>
+        {trend}
       </div>
     </div>
   );
@@ -535,12 +557,39 @@ export default function AllDriversPage() {
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
-        <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="Total Drivers"    value={String(total)}    trend="+19.01%" trendColor="#F97316" />
-        <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="Active Drivers"   value={String(active)}   trend="+19.01%" trendColor="#F97316" />
-        <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="Inactive Drivers" value={String(inactive)} trend="+19.01%" trendColor="#F97316" />
-        <StatCard icon={<Users size={15} className="text-[#1D3461]" />} label="New Drivers"      value="30"               trend="+19.01%" trendColor="#3B82F6" />
-      </div>
+ <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-6 mb-6">
+  <StatCard
+    icon={<Users size={18} className="text-[#1D3461]" />}
+    label="Total Drivers"
+    value={String(total)}
+    trend="+19.01%"
+    trendColor="#F97316"
+  />
+
+  <StatCard
+    icon={<Users size={18} className="text-[#1D3461]" />}
+    label="Active Drivers"
+    value={String(active)}
+    trend="+19.01%"
+    trendColor="#F97316"
+  />
+
+  <StatCard
+    icon={<Users size={18} className="text-[#1D3461]" />}
+    label="Inactive Drivers"
+    value={String(inactive)}
+    trend="+19.01%"
+    trendColor="#F97316"
+  />
+
+  <StatCard
+    icon={<Users size={18} className="text-[#1D3461]" />}
+    label="New Drivers"
+    value="30"
+    trend="+19.01%"
+    trendColor="#3B82F6"
+  />
+</div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
 
@@ -629,7 +678,7 @@ export default function AllDriversPage() {
                         className="w-4 h-4 rounded border-[#D1D5DB] accent-[#1E2A4A] cursor-pointer"
                       />
                     </td>
-                    <td className="px-3 py-3.5 font-semibold text-[#1F2020] whitespace-nowrap">{row.name}</td>
+                    <td className="px-3 py-3.5 font-semibold text-[#1F2020] whitespace-nowrap cursor-pointer" onClick={() => navigate("/dashboard/drivers/details")}>{row.name}</td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.truckId}</td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.payPercent}</td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.tickets}</td>

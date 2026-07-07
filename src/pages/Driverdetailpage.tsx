@@ -16,9 +16,13 @@ import {
   Check,
   FolderOpen,
   Eye,
+  CalendarDays,
+  MessageSquare,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
+import DateRangeModal from "./DateRangeModal";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 interface TicketRow {
   id: number;
   ticketNo: string;
@@ -41,16 +45,176 @@ type Tab = "Tickets" | "Statement";
 type SortDir = "asc" | "desc" | null;
 
 const TICKET_ROWS: TicketRow[] = [
-  { id: 1, ticketNo: "#653783", date: "06/01/2026", aliasUnit: "0952", driver: "Terry Bothman", pickup: "Hanson Lake", dropoff: "LMC", material: "Fine Sand", tonage: 27.69, rate: "$304.59", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 2, ticketNo: "#682497", date: "15/01/2026", aliasUnit: "0650", driver: "Emery Workman", pickup: "Hanson Lake", dropoff: "LMC", material: "Crushed Granite", tonage: 28.32, rate: "$311.52", fsc: "5.00%", gross: "5.00%", ticketStatus: "Pending", invoiceStatus: "Pending", settlementStatus: "Pending" },
-  { id: 3, ticketNo: "#598246", date: "25/01/2026", aliasUnit: "0658", driver: "Roger Dokidis", pickup: "Hanson Lake", dropoff: "LMC", material: "River Pebbles", tonage: 27.45, rate: "$301.95", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 4, ticketNo: "#546892", date: "02/02/2026", aliasUnit: "0485", driver: "Mira Dorwart", pickup: "Hanson Lake", dropoff: "LMC", material: "Limestone", tonage: 26.43, rate: "$290.73", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 5, ticketNo: "#598246", date: "04/02/2026", aliasUnit: "0125", driver: "James Bergson", pickup: "Hanson Lake", dropoff: "Hanson BP", material: "Basalt Chips", tonage: 25.51, rate: "$186.50", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 6, ticketNo: "#516498", date: "08/02/2026", aliasUnit: "0478", driver: "Hanna Mango", pickup: "Hanson Lake", dropoff: "LMC", material: "Slate Shingles", tonage: 26.59, rate: "$220.30", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 7, ticketNo: "#112546", date: "20/02/2026", aliasUnit: "0178", driver: "Erin Carder", pickup: "Hanson Lake", dropoff: "LMC", material: "Coarse Sand", tonage: 20.5, rate: "$165.50", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 8, ticketNo: "#112546", date: "20/02/2026", aliasUnit: "0597", driver: "Jordyn Korsgaard", pickup: "Hanson Lake", dropoff: "LMC", material: "Concrete", tonage: 20.5, rate: "$165.50", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 9, ticketNo: "#112546", date: "21/02/2026", aliasUnit: "0312", driver: "Alex Mercer", pickup: "Hanson Lake", dropoff: "LMC", material: "Gravel Mix", tonage: 22.1, rate: "$188.00", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
-  { id: 10, ticketNo: "#112546", date: "21/02/2026", aliasUnit: "0417", driver: "Nina Ross", pickup: "Hanson Lake", dropoff: "LMC", material: "Sand Mix", tonage: 19.8, rate: "$162.30", fsc: "5.00%", gross: "5.00%", ticketStatus: "Approved", invoiceStatus: "Approved", settlementStatus: "Approved" },
+  {
+    id: 1,
+    ticketNo: "#653783",
+    date: "06/01/2026",
+    aliasUnit: "0952",
+    driver: "Terry Bothman",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Fine Sand",
+    tonage: 27.69,
+    rate: "$304.59",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 2,
+    ticketNo: "#682497",
+    date: "15/01/2026",
+    aliasUnit: "0650",
+    driver: "Emery Workman",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Crushed Granite",
+    tonage: 28.32,
+    rate: "$311.52",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Pending",
+    invoiceStatus: "Pending",
+    settlementStatus: "Pending",
+  },
+  {
+    id: 3,
+    ticketNo: "#598246",
+    date: "25/01/2026",
+    aliasUnit: "0658",
+    driver: "Roger Dokidis",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "River Pebbles",
+    tonage: 27.45,
+    rate: "$301.95",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 4,
+    ticketNo: "#546892",
+    date: "02/02/2026",
+    aliasUnit: "0485",
+    driver: "Mira Dorwart",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Limestone",
+    tonage: 26.43,
+    rate: "$290.73",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 5,
+    ticketNo: "#598246",
+    date: "04/02/2026",
+    aliasUnit: "0125",
+    driver: "James Bergson",
+    pickup: "Hanson Lake",
+    dropoff: "Hanson BP",
+    material: "Basalt Chips",
+    tonage: 25.51,
+    rate: "$186.50",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 6,
+    ticketNo: "#516498",
+    date: "08/02/2026",
+    aliasUnit: "0478",
+    driver: "Hanna Mango",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Slate Shingles",
+    tonage: 26.59,
+    rate: "$220.30",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 7,
+    ticketNo: "#112546",
+    date: "20/02/2026",
+    aliasUnit: "0178",
+    driver: "Erin Carder",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Coarse Sand",
+    tonage: 20.5,
+    rate: "$165.50",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 8,
+    ticketNo: "#112546",
+    date: "20/02/2026",
+    aliasUnit: "0597",
+    driver: "Jordyn Korsgaard",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Concrete",
+    tonage: 20.5,
+    rate: "$165.50",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 9,
+    ticketNo: "#112546",
+    date: "21/02/2026",
+    aliasUnit: "0312",
+    driver: "Alex Mercer",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Gravel Mix",
+    tonage: 22.1,
+    rate: "$188.00",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
+  {
+    id: 10,
+    ticketNo: "#112546",
+    date: "21/02/2026",
+    aliasUnit: "0417",
+    driver: "Nina Ross",
+    pickup: "Hanson Lake",
+    dropoff: "LMC",
+    material: "Sand Mix",
+    tonage: 19.8,
+    rate: "$162.30",
+    fsc: "5.00%",
+    gross: "5.00%",
+    ticketStatus: "Approved",
+    invoiceStatus: "Approved",
+    settlementStatus: "Approved",
+  },
 ];
 
 function StatusBadge({ status }: { status: TicketRow["ticketStatus"] }) {
@@ -187,7 +351,6 @@ function TicketsTab() {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [sortKey, setSortKey] = useState<keyof TicketRow | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
-  const [dateRange] = useState("15/05/2025 - 21/05/2025");
 
   const filtered = [...TICKET_ROWS]
     .filter(
@@ -246,6 +409,9 @@ function TicketsTab() {
     }
   }
 
+  const [openDateModal, setOpenDateModal] = useState(false);
+  const [range, setRange] = useState<DateRange | undefined>();
+
   const cols: { key: keyof TicketRow; label: string }[] = [
     { key: "ticketNo", label: "Ticket No." },
     { key: "date", label: "Date" },
@@ -258,9 +424,9 @@ function TicketsTab() {
     { key: "rate", label: "Rate" },
     { key: "fsc", label: "FSC" },
     { key: "gross", label: "Gross" },
-{ key: "ticketStatus", label: "Ticket Status" },
-{ key: "invoiceStatus", label: "Invoice Status" },
-{ key: "settlementStatus", label: "Settlement Status" },
+    { key: "ticketStatus", label: "Ticket Status" },
+    { key: "invoiceStatus", label: "Invoice Status" },
+    { key: "settlementStatus", label: "Settlement Status" },
   ];
 
   return (
@@ -289,12 +455,26 @@ function TicketsTab() {
               className="pl-9 pr-4 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#111827] placeholder-[#9CA3AF] outline-none w-48"
             />
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 border border-[#E5E7EB] rounded-lg text-sm text-[#374151] bg-white hover:bg-gray-50">
-            <Calendar size={14} className="text-[#6B7280]" />
-            <span>{dateRange}</span>
-          </button>
+          <div
+            onClick={() => setOpenDateModal(true)}
+            className="flex items-center gap-2 text-sm text-[#111827] bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 cursor-pointer"
+          >
+            <CalendarDays size={20} />
+            <span>
+              {range?.from ? format(range.from, "dd/MM/yyyy") : "Start Date"}
+              {" - "}
+              {range?.to ? format(range.to, "dd/MM/yyyy") : "End Date"}
+            </span>
+          </div>
         </div>
       </div>
+
+      <DateRangeModal
+        open={openDateModal}
+        onClose={() => setOpenDateModal(false)}
+        value={range}
+        onChange={setRange}
+      />
 
       {/* Sort By */}
       <div className="flex justify-end mb-3">
@@ -340,8 +520,8 @@ function TicketsTab() {
                 </th>
               ))}
               <th className="px-3 py-3 text-left text-[12px] font-semibold text-[#374151] whitespace-nowrap">
-      Action
-    </th>
+                Action
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#E5E7EB]">
@@ -639,7 +819,7 @@ export default function DriverDetailPage() {
 
   return (
     <div className="bg-[#F3F4F6]">
-            <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors whitespace-nowrap"
@@ -652,65 +832,66 @@ export default function DriverDetailPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
-        <div className="px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
-            <div className="relative w-20 h-20 rounded-full overflow-hidden bg-[#E5E7EB] flex-shrink-0 border-2 border-white shadow">
-              <img
-                src="https://randomuser.me/api/portraits/men/32.jpg"
-                alt="Joseph Martin"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://ui-avatars.com/api/?name=Joseph+Martin&background=1D3461&color=fff&size=80";
-                }}
-              />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-[#111827]">
-                  Joseph Martin
-                </h2>
-                <span className="w-5 h-5 rounded-full bg-[#22C55E] flex items-center justify-center">
-                  <Check size={12} className="text-white stroke-[3]" />
-                </span>
-              </div>
-              <p className="text-sm text-[#6B7280] mt-0.5">New Jersey</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
-              <Phone size={14} /> Call
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
-              <Mail size={14} /> Message
-            </button>
-            <button
-              onClick={() => setIsActive((p) => !p)}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                isActive
-                  ? "bg-[#EF4444] text-white hover:bg-[#DC2626]"
-                  : "bg-[#22C55E] text-white hover:bg-[#16A34A]"
-              }`}
-            >
-              {isActive ? "Deactivate Account" : "Activate Account"}
-            </button>
-          </div>
-        </div>
-
-        <div className="px-6 py-3 bg-[#F9FAFB] border-t border-[#E5E7EB] flex flex-wrap items-center gap-8">
-          <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-            <CreditCard size={14} />
-            <span className="font-medium text-[#374151]">Driver ID :</span>
-            <span>CLT-0024</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-[#6B7280]">
-            <Calendar size={14} />
-            <span className="font-medium text-[#374151]">Added on :</span>
-            <span>1st Jan 2023</span>
-          </div>
-        </div>
+  <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
+  <div className="px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
+    <div className="flex items-start gap-6">
+      <div className="relative w-32 h-32 rounded-full overflow-hidden bg-[#E5E7EB] flex-shrink-0 border-4 border-[#F3F4F6] shadow">
+        <img
+          src="https://randomuser.me/api/portraits/men/32.jpg"
+          alt="Joseph Martin"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src =
+              "https://ui-avatars.com/api/?name=Joseph+Martin&background=1D3461&color=fff&size=80";
+          }}
+        />
       </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-[#1D3461]">
+            Joseph Martin
+          </h2>
+          <span className="w-5 h-5 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
+            <Check size={12} className="text-white stroke-[3]" />
+          </span>
+        </div>
+        <p className="text-sm text-[#374151] mt-5">New Jersey</p>
+      </div>
+    </div>
+
+    <div className="flex items-center gap-2 flex-wrap">
+      <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
+        <Phone size={14} /> Call
+      </button>
+      <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
+        <MessageSquare size={14} /> Message
+      </button>
+      <button
+        onClick={() => setIsActive((p) => !p)}
+        className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+          isActive
+            ? "bg-[#EF4444] text-white hover:bg-[#DC2626]"
+            : "bg-[#22C55E] text-white hover:bg-[#16A34A]"
+        }`}
+      >
+        {isActive ? "Deactivate Account" : "Activate Account"}
+      </button>
+    </div>
+  </div>
+
+  <div className="pr-6 pl-44 -mt-12 py-6 bg-[#D9D9D9] border-t border-[#E5E7EB] flex flex-wrap items-center gap-8">
+    <div className="flex items-center gap-2 text-sm text-[#374151]">
+      <CreditCard size={16} className="text-[#1D3461]" />
+      <span className="font-medium text-[#1D3461]">Driver ID :</span>
+      <span>CLT-0024</span>
+    </div>
+    <div className="flex items-center gap-2 text-sm text-[#374151]">
+      <Calendar size={16} className="text-[#1D3461]" />
+      <span className="font-medium text-[#1D3461]">Added on :</span>
+      <span>1st Jan 2023</span>
+    </div>
+  </div>
+</div>
 
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
         <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center gap-3">

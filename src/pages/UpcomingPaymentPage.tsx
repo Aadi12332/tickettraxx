@@ -668,7 +668,7 @@ const COLUMNS: { key: SortKey; label: string }[] = [
 export default function UpcomingPaymentPage() {
   const [data] = useState<StatementRow[]>(INITIAL_DATA);
   const [search, setSearch] = useState("");
-  console.log({setSearch});
+  console.log({ setSearch });
   const [showEntries, setShowEntries] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -677,7 +677,7 @@ export default function UpcomingPaymentPage() {
   const [sortBy, setSortBy] = useState<SortOption>();
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [payPeriod, setPayPeriod] = useState("");
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [datePickerOpen, setDatePickerOpen] = useState<"start" | "end" | null>(
     null,
   );
@@ -687,17 +687,16 @@ export default function UpcomingPaymentPage() {
     setCurrentPage(1);
   }, [search, showEntries]);
 
-  const filtered = data
-    .sort((a, b) => {
-      if (!sortKey || !sortDir) return 0;
-      const av = a[sortKey],
-        bv = b[sortKey];
-      if (typeof av === "number" && typeof bv === "number")
-        return sortDir === "asc" ? av - bv : bv - av;
-      return sortDir === "asc"
-        ? String(av).localeCompare(String(bv))
-        : String(bv).localeCompare(String(av));
-    });
+  const filtered = data.sort((a, b) => {
+    if (!sortKey || !sortDir) return 0;
+    const av = a[sortKey],
+      bv = b[sortKey];
+    if (typeof av === "number" && typeof bv === "number")
+      return sortDir === "asc" ? av - bv : bv - av;
+    return sortDir === "asc"
+      ? String(av).localeCompare(String(bv))
+      : String(bv).localeCompare(String(av));
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / showEntries));
   const safePage = Math.min(currentPage, totalPages);
@@ -815,51 +814,51 @@ export default function UpcomingPaymentPage() {
           </div>
         </div>
 
-      <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-4 py-2.5">
-             <label className="text-xs text-[#6B7280]">Start date</label>
-             <button
-               onClick={() => setDatePickerOpen("start")}
-               className="flex items-center justify-between w-full text-sm bg-white text-left"
-             >
-               <span
-                 className={dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"}
-               >
-                 {dateRange?.from
-                   ? format(dateRange.from, "MM/dd/yyyy")
-                   : "mm/dd/yyyy"}
-               </span>
-               <Calendar className="text-[#6B7280]" size={14} />
-             </button>
-           </div>
-   
-           <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-4 py-2.5">
-             <label className="text-xs text-[#6B7280]">End date</label>
-             <button
-               onClick={() => setDatePickerOpen("end")}
-               className="flex items-center justify-between w-full text-sm bg-white text-left"
-             >
-               <span
-                 className={dateRange?.to ? "text-[#111827]" : "text-[#9CA3AF]"}
-               >
-                 {dateRange?.to
-                   ? format(dateRange.to, "MM/dd/yyyy")
-                   : "mm/dd/yyyy"}
-               </span>
-               <Calendar className="text-[#6B7280]" size={14} />
-             </button>
-           </div>
-   
-           {datePickerOpen && (
-             <DateRangeModal
-               open={!!datePickerOpen}
-               onClose={() => setDatePickerOpen(null)}
-               value={dateRange}
-               onChange={(range) => {
-                 setDateRange(range);
-                 setDatePickerOpen(null);
-               }}
-             />
-           )}
+        <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-4 py-2.5">
+          <label className="text-xs text-[#6B7280]">Start date</label>
+          <button
+            onClick={() => setDatePickerOpen("start")}
+            className="flex items-center justify-between w-full text-sm bg-white text-left"
+          >
+            <span
+              className={dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"}
+            >
+              {dateRange?.from
+                ? format(dateRange.from, "MM/dd/yyyy")
+                : "mm/dd/yyyy"}
+            </span>
+            <Calendar className="text-[#6B7280]" size={14} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-4 py-2.5">
+          <label className="text-xs text-[#6B7280]">End date</label>
+          <button
+            onClick={() => setDatePickerOpen("end")}
+            className="flex items-center justify-between w-full text-sm bg-white text-left"
+          >
+            <span
+              className={dateRange?.to ? "text-[#111827]" : "text-[#9CA3AF]"}
+            >
+              {dateRange?.to
+                ? format(dateRange.to, "MM/dd/yyyy")
+                : "mm/dd/yyyy"}
+            </span>
+            <Calendar className="text-[#6B7280]" size={14} />
+          </button>
+        </div>
+
+        {datePickerOpen && (
+          <DateRangeModal
+            open={!!datePickerOpen}
+            onClose={() => setDatePickerOpen(null)}
+            value={dateRange}
+            onChange={(range) => {
+              setDateRange(range);
+              setDatePickerOpen(null);
+            }}
+          />
+        )}
 
         <div className="flex flex-col gap-1 flex-1 border border-[#E5E7EB] rounded-lg px-3 py-2.5">
           <label className="text-xs text-[#6B7280]">Driver</label>
