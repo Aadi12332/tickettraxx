@@ -6,11 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { TicketApprovalModal } from "./TicketApprovalModal";
 import { NotDeliveredModal } from "./NotDeliveredModal";
 
-
 type Status = "Active" | "Delivered" | "Incomplete" | "Cancelled";
 
-interface Load {
-  id: number;
+export interface ActiveLoad {
+  id: string;
   driverName: string;
   clientName: string;
   date: string;
@@ -21,48 +20,130 @@ interface Load {
   status: Status;
 }
 
-type SortKey = keyof Omit<Load, "id">;
+type SortKey = keyof Omit<ActiveLoad, "id">;
 type SortDir = "asc" | "desc" | null;
 
-
-const INITIAL_DATA: Load[] = [
-  { id: 1, driverName: "Marley Levin",   clientName: "CELINA",             date: "02/04/2026", material: "Y Rock",        pickup: "Hanson Lake", deliver: "LMC", loads: 3, status: "Active"     },
-  { id: 2, driverName: "Lydia Culhane",  clientName: "RESOLVE Ravenna #1", date: "02/04/2026", material: "MAN SAND",      pickup: "Hanson Lake", deliver: "LMC", loads: 2, status: "Delivered"  },
-  { id: 3, driverName: "Zaire Stanton",  clientName: "LMC-ROSSER",         date: "02/04/2026", material: "Concrete Sand", pickup: "Hanson Lake", deliver: "LMC", loads: 3, status: "Active"     },
-  { id: 4, driverName: "Wilson Bothman", clientName: "ANNA",               date: "02/04/2026", material: "Concrete Sand", pickup: "Hanson Lake", deliver: "LMC", loads: 2, status: "Incomplete" },
-  { id: 5, driverName: "Jaydon Geidt",   clientName: "LYDIA",              date: "02/04/2026", material: "Gravel",        pickup: "Hanson Lake", deliver: "LMC", loads: 1, status: "Active"     },
-  { id: 6, driverName: "Jordyn Bator",   clientName: "LMC-ROSSER",         date: "02/04/2026", material: "Concrete Sand", pickup: "Hanson Lake", deliver: "LMC", loads: 2, status: "Delivered"  },
-  { id: 7, driverName: "Giana Rosser",   clientName: "CELINA",             date: "02/04/2026", material: "MAN SAND",      pickup: "Hanson Lake", deliver: "LMC", loads: 3, status: "Cancelled"  },
+const INITIAL_DATA: ActiveLoad[] = [
+  {
+    id: "1",
+    driverName: "Marley Levin",
+    clientName: "CELINA",
+    date: "02/04/2026",
+    material: "Y Rock",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 3,
+    status: "Active",
+  },
+  {
+    id: "2",
+    driverName: "Lydia Culhane",
+    clientName: "RESOLVE Ravenna #1",
+    date: "02/04/2026",
+    material: "MAN SAND",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 2,
+    status: "Delivered",
+  },
+  {
+    id: "3",
+    driverName: "Zaire Stanton",
+    clientName: "LMC-ROSSER",
+    date: "02/04/2026",
+    material: "Concrete Sand",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 3,
+    status: "Active",
+  },
+  {
+    id: "4",
+    driverName: "Wilson Bothman",
+    clientName: "ANNA",
+    date: "02/04/2026",
+    material: "Concrete Sand",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 2,
+    status: "Incomplete",
+  },
+  {
+    id: "5",
+    driverName: "Jaydon Geidt",
+    clientName: "LYDIA",
+    date: "02/04/2026",
+    material: "Gravel",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 1,
+    status: "Active",
+  },
+  {
+    id: "6",
+    driverName: "Jordyn Bator",
+    clientName: "LMC-ROSSER",
+    date: "02/04/2026",
+    material: "Concrete Sand",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 2,
+    status: "Delivered",
+  },
+  {
+    id: "7",
+    driverName: "Giana Rosser",
+    clientName: "CELINA",
+    date: "02/04/2026",
+    material: "MAN SAND",
+    pickup: "Hanson Lake",
+    deliver: "LMC",
+    loads: 3,
+    status: "Cancelled",
+  },
 ];
 
-const ALL_STATUSES: Status[] = ["Active", "Delivered", "Incomplete", "Cancelled"];
-
+const ALL_STATUSES: Status[] = [
+  "Active",
+  "Delivered",
+  "Incomplete",
+  "Cancelled",
+];
 
 const STATUS_STYLES: Record<Status, string> = {
-  Active:     "bg-[#34C759] text-white",
-  Delivered:  "bg-[#007C34] text-white",
+  Active: "bg-[#34C759] text-white",
+  Delivered: "bg-[#007C34] text-white",
   Incomplete: "bg-[#F26522] text-white",
-  Cancelled:  "bg-[#E70D0D] text-white",
+  Cancelled: "bg-[#E70D0D] text-white",
 };
 
 function StatusBadge({ status }: { status: Status }) {
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${STATUS_STYLES[status]}`}>
+    <span
+      className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium ${STATUS_STYLES[status]}`}
+    >
       {status}
     </span>
   );
 }
 
-
 function SortIcon({ dir }: { dir: SortDir }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="inline ml-1 flex-shrink-0">
-      <path d="M7 2L4 6H10L7 2Z"  fill={dir === "asc"  ? "#111827" : "#9CA3AF"} />
-      <path d="M7 12L10 8H4L7 12Z" fill={dir === "desc" ? "#111827" : "#9CA3AF"} />
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className="inline ml-1 flex-shrink-0"
+    >
+      <path d="M7 2L4 6H10L7 2Z" fill={dir === "asc" ? "#111827" : "#9CA3AF"} />
+      <path
+        d="M7 12L10 8H4L7 12Z"
+        fill={dir === "desc" ? "#111827" : "#9CA3AF"}
+      />
     </svg>
   );
 }
-
 
 export function FilterDropdown({
   selected,
@@ -76,7 +157,8 @@ export function FilterDropdown({
 
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -94,8 +176,8 @@ export function FilterDropdown({
     selected.length === 0 || selected.length === ALL_STATUSES.length
       ? "Filter By"
       : selected.length === 1
-      ? selected[0]
-      : `${selected.length} selected`;
+        ? selected[0]
+        : `${selected.length} selected`;
 
   return (
     <div ref={ref} className="relative">
@@ -105,8 +187,20 @@ export function FilterDropdown({
       >
         <Filter size={14} />
         {label}
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={`transition-transform ${open ? "rotate-180" : ""}`}>
-          <path d="M3 5l4 4 4-4" stroke="#6B7280" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 14 14"
+          fill="none"
+          className={`transition-transform ${open ? "rotate-180" : ""}`}
+        >
+          <path
+            d="M3 5l4 4 4-4"
+            stroke="#6B7280"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
 
@@ -131,7 +225,13 @@ export function FilterDropdown({
               >
                 {selected.includes(status) && (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5l2 2 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M2 5l2 2 4-4"
+                      stroke="white"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 )}
               </span>
@@ -144,13 +244,7 @@ export function FilterDropdown({
   );
 }
 
-
-function ActionsMenu({
-  status,
-}: {
-  loadId: number;
-  status: Status;
-}) {
+function ActionsMenu({ status }: { loadId: string; status: Status }) {
   const [showDeliveredModal, setShowDeliveredModal] = useState(false);
   const [showCancelledModal, setShowCancelledModal] = useState(false);
 
@@ -192,22 +286,20 @@ function ActionsMenu({
   );
 }
 
-
 const COLUMNS: { key: SortKey; label: string; className?: string }[] = [
   { key: "driverName", label: "Driver's Name" },
   { key: "clientName", label: "Client's Name" },
-  { key: "date",       label: "Date" },
-  { key: "material",   label: "Material" },
-  { key: "pickup",     label: "Pickup" },
-  { key: "deliver",    label: "Deliver" },
-  { key: "loads",      label: "Loads",  className: "text-center" },
-  { key: "status",     label: "Status" },
+  { key: "date", label: "Date" },
+  { key: "material", label: "Material" },
+  { key: "pickup", label: "Pickup" },
+  { key: "deliver", label: "Deliver" },
+  { key: "loads", label: "Loads", className: "text-center" },
+  { key: "status", label: "Status" },
 ];
 
-
-export default function ActiveLoadsTable() {
-  const [data] = useState<Load[]>(INITIAL_DATA);
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+export default function ActiveLoadsTable({ loads }: { loads?: ActiveLoad[] }) {
+  const data = loads ?? INITIAL_DATA;
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [filterStatuses, setFilterStatuses] = useState<Status[]>([]);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
@@ -231,7 +323,7 @@ export default function ActiveLoadsTable() {
 
   const processed = [...data]
     .filter((row) =>
-      filterStatuses.length === 0 ? true : filterStatuses.includes(row.status)
+      filterStatuses.length === 0 ? true : filterStatuses.includes(row.status),
     )
     .sort((a, b) => {
       if (!sortKey || !sortDir) return 0;
@@ -244,31 +336,42 @@ export default function ActiveLoadsTable() {
       return sortDir === "asc" ? cmp : -cmp;
     });
 
-  const allSelected = processed.length > 0 && processed.every((r) => selectedRows.includes(r.id));
-  const someSelected = processed.some((r) => selectedRows.includes(r.id)) && !allSelected;
+  const allSelected =
+    processed.length > 0 && processed.every((r) => selectedRows.includes(r.id));
+  const someSelected =
+    processed.some((r) => selectedRows.includes(r.id)) && !allSelected;
 
   function toggleAll() {
     if (allSelected) {
-      setSelectedRows((prev) => prev.filter((id) => !processed.find((r) => r.id === id)));
+      setSelectedRows((prev) =>
+        prev.filter((id) => !processed.find((r) => r.id === id)),
+      );
     } else {
-      setSelectedRows((prev) => [...new Set([...prev, ...processed.map((r) => r.id)])]);
+      setSelectedRows((prev) => [
+        ...new Set([...prev, ...processed.map((r) => r.id)]),
+      ]);
     }
   }
 
-  function toggleRow(id: number) {
+  function toggleRow(id: string) {
     setSelectedRows((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   }
 
-
   return (
-    <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden px-6">
+    <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden px-5">
       <div className="flex items-center justify-between py-4 gap-3 flex-wrap">
         <h2 className="text-base font-semibold text-[#111827]">Active Loads</h2>
         <div className="flex items-center gap-3">
-          <FilterDropdown selected={filterStatuses} onChange={setFilterStatuses} />
-          <button onClick={()=>navigate("/dashboard/active-loads")} className="px-4 py-2 text-sm font-medium text-[#111827] border border-[#C8C8C8] rounded-lg bg-white hover:bg-gray-50 transition-colors">
+          <FilterDropdown
+            selected={filterStatuses}
+            onChange={setFilterStatuses}
+          />
+          <button
+            onClick={() => navigate("/dashboard/active-loads")}
+            className="px-4 py-2 text-sm font-medium text-[#111827] border border-[#C8C8C8] rounded-lg bg-white hover:bg-gray-50 transition-colors"
+          >
             View All
           </button>
         </div>
@@ -282,7 +385,9 @@ export default function ActiveLoadsTable() {
                 <input
                   type="checkbox"
                   checked={allSelected}
-                  ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected;
+                  }}
                   onChange={toggleAll}
                   className="w-4 h-4 rounded border-[#D1D5DB] accent-[#111827] cursor-pointer"
                 />
@@ -310,8 +415,11 @@ export default function ActiveLoadsTable() {
           <tbody className="divide-y divide-[#E5E7EB]">
             {processed.length === 0 ? (
               <tr>
-                <td colSpan={COLUMNS.length + 2} className="px-6 py-12 text-center text-[#9CA3AF]">
-                  No loads match the current filter.
+                <td
+                  colSpan={COLUMNS.length + 2}
+                  className="px-6 py-14 text-center text-[#9CA3AF]"
+                >
+                  {data.length === 0 ? "No Data Found" : "No loads match the current filter."}
                 </td>
               </tr>
             ) : (
@@ -330,21 +438,32 @@ export default function ActiveLoadsTable() {
                       className="w-4 h-4 rounded border-[#D1D5DB] accent-[#1F2020] cursor-pointer"
                     />
                   </td>
-                  <td className="px-3 py-3.5 text-[#1F2020] font-medium whitespace-nowrap">{row.driverName}</td>
-                  <td className="px-3 py-3.5 text-[#1F2020] font-medium whitespace-nowrap">{row.clientName}</td>
-                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">{row.date}</td>
-                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">{row.material}</td>
-                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">{row.pickup}</td>
-                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">{row.deliver}</td>
-                  <td className="px-3 py-3.5 text-[#707070] text-center">{row.loads}</td>
+                  <td className="px-3 py-3.5 text-[#1F2020] font-medium whitespace-nowrap">
+                    {row.driverName}
+                  </td>
+                  <td className="px-3 py-3.5 text-[#1F2020] font-medium whitespace-nowrap">
+                    {row.clientName}
+                  </td>
+                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">
+                    {row.date}
+                  </td>
+                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">
+                    {row.material}
+                  </td>
+                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">
+                    {row.pickup}
+                  </td>
+                  <td className="px-3 py-3.5 text-[#707070] whitespace-nowrap">
+                    {row.deliver}
+                  </td>
+                  <td className="px-3 py-3.5 text-[#707070] text-center">
+                    {row.loads}
+                  </td>
                   <td className="px-3 py-3.5 whitespace-nowrap">
                     <StatusBadge status={row.status} />
                   </td>
                   <td className="px-3 py-3.5">
-                    <ActionsMenu
-  loadId={row.id}
-  status={row.status}
-/>
+                    <ActionsMenu loadId={row.id} status={row.status} />
                   </td>
                 </tr>
               ))

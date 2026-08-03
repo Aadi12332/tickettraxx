@@ -2,10 +2,11 @@ import { Trash2, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotiIcon from "../assets/images/noti-icon.svg"
 
-type NotificationItem = {
-  id: number;
+export type NotificationItem = {
+  id: string;
   title: string;
   description: string;
+  type: string;
 };
 
 type NotificationDrawerProps = {
@@ -15,6 +16,9 @@ type NotificationDrawerProps = {
   setNotifications: React.Dispatch<
     React.SetStateAction<NotificationItem[]>
   >;
+  isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 };
 
 export default function NotificationDrawer({
@@ -22,6 +26,9 @@ export default function NotificationDrawer({
   onClose,
   notifications,
   setNotifications,
+  isLoading,
+  error,
+  onRetry,
 }: NotificationDrawerProps) {
   const navigate = useNavigate();
 
@@ -46,7 +53,21 @@ export default function NotificationDrawer({
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          {notifications.length ? (
+          {isLoading ? (
+            <div className="h-full flex items-center justify-center text-sm text-[#979797]">
+              Loading notifications...
+            </div>
+          ) : error ? (
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <p className="text-sm text-[#C40000]">{error}</p>
+              <button
+                onClick={onRetry}
+                className="mt-4 h-9 px-4 rounded-md border border-[#315497] text-sm font-medium text-[#315497]"
+              >
+                Try again
+              </button>
+            </div>
+          ) : notifications.length ? (
             <div className="space-y-4">
               {notifications.map((notification) => (
                 <div
@@ -63,14 +84,17 @@ export default function NotificationDrawer({
                         {notification.description}
                       </p>
 
-                      <button
-                        onClick={() =>
-                          {navigate("/dashboard/assign-loads");onClose();}
-                        }
-                        className="mt-4 h-8 px-4 rounded-md bg-[#1CDC30] text-white text-sm font-medium"
-                      >
-                        Assign to another driver
-                      </button>
+                      {notification.type === "load.allocated" && (
+                        <button
+                          onClick={() => {
+                            navigate("/dashboard/assign-loads");
+                            onClose();
+                          }}
+                          className="mt-4 h-8 px-4 rounded-md bg-[#1CDC30] text-white text-sm font-medium"
+                        >
+                          Assign to another driver
+                        </button>
+                      )}
                     </div>
 
                     <button

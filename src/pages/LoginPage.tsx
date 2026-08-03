@@ -98,7 +98,11 @@ export const LoginPage = () => {
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" className="w-5 h-5 accent-[#1D3461]" />
+            <input
+    type="checkbox"
+    {...register("rememberMe")}
+    className="w-5 h-5 accent-[#1D3461]"
+/>
             <span className="text-base text-[#fff]">Remember Me</span>
           </label>
           <Link

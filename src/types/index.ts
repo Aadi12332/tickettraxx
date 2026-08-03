@@ -1,13 +1,38 @@
+import { LoginApiResponse } from "@/context/AuthContext";
+
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
-  role: 'contractor' | 'admin';
-  avatar?: string;
+  role: "contractor" | "admin";
+
+  permissions: string[];
+
+  contractorId: string | null;
+
+  customerId: string | null;
+
+  status: string;
+
+  verified: boolean;
+
+  createdAt: string;
+
+  updatedAt: string;
+
+  lastLoginAt: string;
+
+  twoFactor: {
+    enabled: boolean;
+    phone: string | null;
+    enabledAt: string | null;
+  };
 }
 
 export interface AuthState {
   user: User | null;
+  token: string | null;
+  authData: LoginApiResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

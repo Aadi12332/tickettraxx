@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ProtectedRoute, PublicRoute } from "./routes/ProtectedRoute";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { LoginPage } from "./pages/LoginPage";
@@ -23,99 +23,84 @@ import DriverDetailPage from "./pages/Driverdetailpage";
 import AddTruck from "./pages/AddTruck";
 import UploadTicketExtraction from "./pages/UploadTicketExtraction";
 
-export const App = () => {
+const AppRoutes = () => {
+  const { isAuthenticated, isLoading } = useAuth();
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#38BDF8] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <Routes>
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-otp" element={<OtpPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+      </Route>
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+
+          <Route path="/dashboard/assign-loads" element={<AssignLoadPage />} />
+
+          <Route path="/dashboard/drivers" element={<AllDriversPage />} />
+
+          <Route path="/dashboard/drivers/details" element={<DriverDetailPage />} />
+
+          <Route path="/dashboard/drivers/add-driver" element={<AddDriver />} />
+
+          <Route path="/dashboard/active-loads" element={<ActiveLoadsPage />} />
+
+          <Route path="/dashboard/trucks" element={<TruckDetailsPage />} />
+
+          <Route path="/dashboard/trucks/add" element={<AddTruck />} />
+
+          <Route path="/dashboard/upload-tickets" element={<UploadTicketPage />} />
+
+          <Route path="/dashboard/tickets" element={<TicketStatusPage />} />
+
+          <Route
+            path="/dashboard/tickets-extraction"
+            element={<UploadTicketExtraction />}
+          />
+
+          <Route path="/dashboard/payments" element={<UpcomingPaymentPage />} />
+
+          <Route path="/dashboard/statement" element={<StatementPage />} />
+
+          <Route path="/dashboard/deductions" element={<DeductionPage />} />
+
+          <Route path="/dashboard/permissions" element={<PermissionsPage />} />
+
+          <Route path="/permissions/create-role" element={<CreateNewRole mode="create" />} />
+
+          <Route path="/permissions/edit-role" element={<CreateNewRole mode="edit" />} />
+        </Route>
+      </Route>
+
+      <Route
+        path="/"
+        element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
+      />
+      <Route
+        path="*"
+        element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />}
+      />
+    </Routes>
+  );
+};
+
+export const App = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Routes>
-          <Route element={<PublicRoute />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/verify-otp" element={<OtpPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-          </Route>
-
-          <Route element={<ProtectedRoute />}>
-            <Route element={<DashboardLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-
-              <Route
-                path="/dashboard/assign-loads"
-                element={<AssignLoadPage />}
-              />
-
-              <Route
-                path="/dashboard/drivers"
-                element={<AllDriversPage />}
-              />
-
-              <Route
-                path="/dashboard/drivers/details"
-                element={<DriverDetailPage />}
-              />
-
-              <Route
-                path="/dashboard/drivers/add-driver"
-                element={<AddDriver />}
-              />
-
-              <Route
-                path="/dashboard/active-loads"
-                element={<ActiveLoadsPage />}
-              />
-
-              <Route
-                path="/dashboard/trucks"
-                element={<TruckDetailsPage />}
-              />
-
-              <Route path="/dashboard/trucks/add" element={<AddTruck />} />
-
-              <Route
-                path="/dashboard/upload-tickets"
-                element={<UploadTicketPage />}
-              />
-
-              <Route
-                path="/dashboard/tickets"
-                element={<TicketStatusPage />}
-              />
-
-              <Route
-                path="/dashboard/tickets-extraction"
-                element={<UploadTicketExtraction />}
-              />
-
-              <Route
-                path="/dashboard/payments"
-                element={<UpcomingPaymentPage />}
-              />
-
-              <Route
-                path="/dashboard/statement"
-                element={<StatementPage />}
-              />
-
-              <Route
-                path="/dashboard/deductions"
-                element={<DeductionPage />}
-              />
-
-              <Route
-                path="/dashboard/permissions"
-                element={<PermissionsPage />}
-              />
-
-              <Route path="/permissions/create-role" element={<CreateNewRole mode="create" />} />
-              
-              <Route path="/permissions/edit-role" element={<CreateNewRole mode="edit" />} />
-            </Route>
-          </Route>
-
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+        <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
   );

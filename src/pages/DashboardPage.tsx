@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Package, DollarSign, Ticket, CalendarDays } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Load, Alert } from "../types";
@@ -7,11 +7,11 @@ import DashIcon2 from "../assets/images/dash-icon-2.png";
 import DashIcon3 from "../assets/images/dash-icon-3.png";
 import GraphIcon from "../assets/images/graph-icon.svg";
 import AlertCircle from "../assets/images/alert-circle.svg";
-import ActiveLoadsTable from "./Activeloadstable";
+import ActiveLoadsTable, { ActiveLoad } from "./Activeloadstable";
 import { LiveTrackingModal } from "./LiveTrackingModal";
 import DateRangeModal from "./DateRangeModal";
 import { DateRange } from "react-day-picker";
-import { format } from "date-fns";
+import { endOfDay, format, startOfDay } from "date-fns";
 import { useNavigate } from "react-router-dom";
 
 const statCards = [
@@ -121,14 +121,191 @@ const alerts: Alert[] = [
   },
 ];
 
+type DashboardRecentLoad = {
+  ticketId: string;
+  ticketNo: string;
+  driver: { name: string } | null;
+  pickup: { name: string } | null;
+  dropoff: { name: string } | null;
+  status: Load["status"];
+  deliveryDate: string;
+};
+
+type DashboardAlert = {
+  _id?: string;
+  id?: string;
+  message: string;
+  type?: Alert["type"];
+  severity?: "error" | "warning";
+  createdAt?: string;
+  date?: string;
+  time?: string;
+};
+
+type ContractorDashboardData = {
+  totalEarningsYTD: number;
+  pendingPayment: number;
+  upcomingTicketsDue: number;
+  recentLoads: DashboardRecentLoad[];
+  alerts: DashboardAlert[];
+  ticketStatusBreakdown: {
+    pendingUpload: number;
+    rejectedTickets: number;
+    incompleteLoads: number;
+    approvedTickets: number;
+  };
+  settlementOverview: {
+    dueThisFriday: number;
+    unsettledTickets: number;
+    invoicedAmount: number;
+  };
+  contractorDrivers: {
+    activeDrivers: number;
+    topPerformingDriver: { name: string } | null;
+    averageDriverPay: number;
+  };
+  activeLoads: Array<{
+    assignmentId: string;
+    driverName: string;
+    clientName: string;
+    date: string;
+    loads: number;
+    status: ActiveLoad["status"];
+  }>;
+};
+
+type ContractorDashboardResponse = {
+  data: ContractorDashboardData;
+};
+
+const formatCurrency = (value: number, fractionDigits = 0) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(value);
+
 export const DashboardPage = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [selectedLoad, setSelectedLoad] = useState<any>(null);
   const [openDateModal, setOpenDateModal] = useState(false);
   const [range, setRange] = useState<DateRange | undefined>();
+  const [dashboardData, setDashboardData] = useState<ContractorDashboardData | null>(null);
   const navigate = useNavigate();
+  const startDate = range?.from ? format(range.from, "yyyy-MM-dd") : undefined;
+  const endDate = range?.to ? format(range.to, "yyyy-MM-dd") : undefined;
 
-  const rows = [
+  const isInSelectedDateRange = (dateValue?: string) => {
+    if (!range?.from && !range?.to) return true;
+    if (!dateValue) return false;
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return false;
+
+    return (
+      (!range.from || date >= startOfDay(range.from)) &&
+      (!range.to || date <= endOfDay(range.to))
+    );
+  };
+
+  useEffect(() => {
+    if (!token) return;
+
+    const controller = new AbortController();
+
+    const loadDashboard = async () => {
+      try {
+        const url = new URL("https://65.1.152.16/api/dashboard/contractor");
+        if (startDate) url.searchParams.set("startDate", startDate);
+        if (endDate) url.searchParams.set("endDate", endDate);
+
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+        const payload = (await response.json().catch(() => null)) as ContractorDashboardResponse | null;
+
+        if (response.ok && payload?.data) {
+          setDashboardData(payload.data);
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          // The existing dashboard values remain visible if the request fails.
+        }
+      }
+    };
+
+    void loadDashboard();
+    return () => controller.abort();
+  }, [token, startDate, endDate]);
+
+  const liveRecentLoads: Load[] = dashboardData
+    ? dashboardData.recentLoads
+        .filter((load) => isInSelectedDateRange(load.deliveryDate))
+        .map((load) => ({
+        id: load.ticketId,
+        ticketId: load.ticketNo,
+        driver: load.driver?.name ?? "-",
+        pickup: [load.pickup?.name, load.dropoff?.name].filter(Boolean).join(" - "),
+        dropoff: load.dropoff?.name ?? "",
+        status: load.status,
+        deliveryDate: format(new Date(load.deliveryDate), "dd MMM"),
+        }))
+    : recentLoads;
+  const liveAlerts: Alert[] = dashboardData
+    ? dashboardData.alerts
+        .filter((alert) => isInSelectedDateRange(alert.createdAt ?? alert.date))
+        .map((alert, index) => ({
+        id: alert._id ?? alert.id ?? String(index),
+        message: alert.message,
+        type: alert.type ?? alert.severity ?? "warning",
+        time: alert.time ?? (alert.createdAt ? format(new Date(alert.createdAt), "hh:mm a") : ""),
+        }))
+    : alerts;
+  const liveActiveLoads: ActiveLoad[] | undefined = dashboardData?.activeLoads
+    .filter((load) => isInSelectedDateRange(load.date))
+    .map((load) => ({
+      id: load.assignmentId,
+      driverName: load.driverName,
+      clientName: load.clientName,
+      date: format(new Date(load.date), "dd/MM/yyyy"),
+      material: "-",
+      pickup: "-",
+      deliver: "-",
+      loads: load.loads,
+      status: load.status,
+    }));
+
+  const liveStatCards = dashboardData
+    ? [
+        { ...statCards[0], value: formatCurrency(dashboardData.totalEarningsYTD) },
+        { ...statCards[1], value: formatCurrency(dashboardData.pendingPayment) },
+        { ...statCards[2], value: String(dashboardData.upcomingTicketsDue) },
+      ]
+    : statCards;
+
+  const rows = dashboardData ? [
+    {
+      label: "Due This Friday:",
+      value: formatCurrency(dashboardData.settlementOverview.dueThisFriday, 2),
+      valueClass: "text-[#111827] font-bold text-lg",
+      onClick: () => navigate("/dashboard/payments"),
+    },
+    {
+      label: "Unsettled Tickets",
+      value: String(dashboardData.settlementOverview.unsettledTickets),
+      suffix: "active",
+      valueClass: "font-bold text-[#111827] text-base",
+      onClick: () => navigate("/dashboard/tickets"),
+    },
+    {
+      label: "Invoiced Amount",
+      value: formatCurrency(dashboardData.settlementOverview.invoicedAmount, 2),
+      valueClass: "font-bold text-[#1D3461] text-lg",
+      onClick: () => {},
+    },
+  ] : [
     {
       label: "Due This Friday:",
       value: "$148,320.75",
@@ -191,7 +368,7 @@ export const DashboardPage = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {statCards.map((card, i) => (
+        {liveStatCards.map((card, i) => (
           <div
             key={i}
             className="bg-white rounded-lg border border-gray-200 p-5 flex flex-col gap-4"
@@ -243,7 +420,9 @@ export const DashboardPage = () => {
                   ].map((h) => (
                     <th
                       key={h}
-                      className="px-5 py-3 text-left text-sm font-semibold text-[#111827]"
+                      className={`px-5 py-3 text-left text-sm font-semibold text-[#111827] ${
+                        h === "Status" ? "min-w-[110px]" : h === "Delivery Date" ? "min-w-[140px]" : "min-w-[100px]"
+                      }`}
                     >
                       {h}
                     </th>
@@ -251,7 +430,13 @@ export const DashboardPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E5E7EB]">
-                {recentLoads.map((load) => (
+                {liveRecentLoads.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-12 text-center text-[#9CA3AF]">
+                      No Data Found
+                    </td>
+                  </tr>
+                ) : liveRecentLoads.map((load) => (
                   <tr
                     key={load.id}
                     onClick={() => setSelectedLoad(load)}
@@ -262,7 +447,7 @@ export const DashboardPage = () => {
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2.5">
-                        <img
+                        {/* <img
                           src={load.driverAvatar}
                           alt={load.driver}
                           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
@@ -270,7 +455,7 @@ export const DashboardPage = () => {
                             (e.target as HTMLImageElement).style.display =
                               "none";
                           }}
-                        />
+                        /> */}
                         <span className="text-[#111827] font-medium">
                           {load.driver}
                         </span>
@@ -279,10 +464,10 @@ export const DashboardPage = () => {
                     <td className="px-5 py-3 font-medium text-[#111827]">
                       {load.pickup}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 min-w-[110px]">
                       <span className={`text-[#6B7280]`}>{load.status}</span>
                     </td>
-                    <td className="px-5 py-3 text-[#6B7280]">
+                    <td className="px-5 py-3 text-[#6B7280] min-w-[140px]">
                       {load.deliveryDate}
                     </td>
                   </tr>
@@ -297,13 +482,17 @@ export const DashboardPage = () => {
           onClose={() => setSelectedLoad(null)}
         />
 
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-5 py-4">
             <h3 className="font-semibold text-[#111827]">Alerts & Issues</h3>
           </div>
 
-          <div className="max-h-[330px] overflow-auto scroll-hide">
-            {alerts.map((alert) => (
+          <div className="max-h-[330px] overflow-auto scroll-hide flex-1">
+            {liveAlerts.length === 0 ? (
+              <div className="px-5 py-5 text-center text-sm text-[#9CA3AF] h-full flex items-center justify-center">
+                No Data Found
+              </div>
+            ) : liveAlerts.map((alert) => (
               <div
                 key={alert.id}
                 className="px-5 py-3.5 flex items-start gap-3 hover:bg-gray-50/50 transition-colors"
@@ -336,12 +525,19 @@ export const DashboardPage = () => {
               Ticket Status Breakdown
             </h3>
             <div className="grid sm:grid-cols-4 grid-cols-2 gap-3">
-              {[
-                { count: 32, label: "Pending\nUpload", bg: "bg-yellow-50" },
-                { count: 24, label: "Rejected\nTickets", bg: "bg-blue-50" },
-                { count: 10, label: "Incomplete\nLoads", bg: "bg-red-50" },
-                { count: 42, label: "Approved\nTickets", bg: "bg-green-50" },
-              ].map((s) => (
+              {(dashboardData
+                ? [
+                    { count: dashboardData.ticketStatusBreakdown.pendingUpload, label: "Pending\nUpload", bg: "bg-yellow-50" },
+                    { count: dashboardData.ticketStatusBreakdown.rejectedTickets, label: "Rejected\nTickets", bg: "bg-blue-50" },
+                    { count: dashboardData.ticketStatusBreakdown.incompleteLoads, label: "Incomplete\nLoads", bg: "bg-red-50" },
+                    { count: dashboardData.ticketStatusBreakdown.approvedTickets, label: "Approved\nTickets", bg: "bg-green-50" },
+                  ]
+                : [
+                    { count: 32, label: "Pending\nUpload", bg: "bg-yellow-50" },
+                    { count: 24, label: "Rejected\nTickets", bg: "bg-blue-50" },
+                    { count: 10, label: "Incomplete\nLoads", bg: "bg-red-50" },
+                    { count: 42, label: "Approved\nTickets", bg: "bg-green-50" },
+                  ]).map((s) => (
                 <div
                   key={s.label}
                   className={`${s.bg} rounded-lg p-4 flex flex-col items-center text-center`}
@@ -399,7 +595,7 @@ export const DashboardPage = () => {
           <div className="flex flex-col gap-3 h-[calc(100%-2rem)]">
             <div className="bg-[#0088FF0F] rounded-lg p-6 flex flex-col items-center justify-center flex-1">
               <span className="text-[30px] font-semibold text-[#111827]">
-                52
+                {dashboardData?.contractorDrivers.activeDrivers ?? 52}
               </span>
               <span className="text-sm text-[#757272] mt-2">
                 Active Drivers
@@ -409,7 +605,7 @@ export const DashboardPage = () => {
             <div className="grid sm:grid-cols-2 grid-cols-1 gap-3">
               <div className="bg-[#0088FF0F] rounded-lg p-5 flex flex-col items-center justify-center">
                 <span className="text-[30px] font-semibold text-[#111827]">
-                  Joseph Ken
+                  {dashboardData?.contractorDrivers.topPerformingDriver?.name ?? "N/A"}
                 </span>
                 <span className="text-sm text-[#757272] mt-1">
                   Top Performing
@@ -417,7 +613,7 @@ export const DashboardPage = () => {
               </div>
               <div className="bg-[#0088FF0F] rounded-lg p-5 flex flex-col items-center justify-center">
                 <span className="text-[30px] font-semibold text-[#111827]">
-                  $27.00
+                  {dashboardData ? formatCurrency(dashboardData.contractorDrivers.averageDriverPay, 2) : "$27.00"}
                 </span>
                 <span className="text-sm text-[#757272] mt-1">
                   Average Driver Pay
@@ -428,7 +624,7 @@ export const DashboardPage = () => {
         </div>
       </div>
 
-      <ActiveLoadsTable />
+      <ActiveLoadsTable loads={liveActiveLoads} />
     </div>
   );
 };
