@@ -13,6 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import NotificationDrawer, {
   NotificationItem,
 } from "../../pages/NotificationDrawer";
+import { hasInvalidOrExpiredTokenError } from "../../utils/api";
 
 type NotificationApiItem = {
   _id: string;
@@ -53,6 +54,12 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         headers: { Authorization: `Bearer ${token}` },
         signal,
       });
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
       const payload = (await response.json().catch(() => null)) as NotificationsApiResponse | null;
 
       if (!response.ok || !payload?.data) {
@@ -74,7 +81,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
     } finally {
       if (!signal?.aborted) setIsLoadingNotifications(false);
     }
-  }, [token, user]);
+  }, [logout, token, user]);
 
   useEffect(() => {
     const controller = new AbortController();

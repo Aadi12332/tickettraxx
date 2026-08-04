@@ -1,20 +1,118 @@
 import { Eye, Download, X, Check } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 
 interface Props {
   open: boolean;
   onClose: () => void;
   onPreview: () => void;
+  truckId?: string | null;
+}
+
+interface TruckDetailsApiResponse {
+  data?: {
+    _id?: string;
+    unitNumber?: string | null;
+    alias?: string[] | null;
+    vinNumber?: string | null;
+    make?: string | null;
+    model?: string | null;
+    year?: number | null;
+    color?: string | null;
+    contractorId?: {
+      companyName?: string | null;
+    } | null;
+    assignedDriverId?: {
+      name?: string | null;
+      type?: string | null;
+    } | null;
+    loadThisMonth?: number | null;
+    status?: string | null;
+    insuranceExpiry?: string | null;
+    nextMaintenanceDueAt?: string | null;
+    assignedFromDate?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
+  };
+}
+
+function formatDisplayValue(value: string | number | null | undefined) {
+  if (value === null || value === undefined) return "N/A";
+  if (typeof value === "string") {
+    return value.trim() ? value : "N/A";
+  }
+  return String(value);
+}
+
+function formatDateValue(value: string | number | null | undefined) {
+  if (value === null || value === undefined) return "N/A";
+  if (typeof value === "string" && value.trim() === "") return "N/A";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return formatDisplayValue(value);
+  }
+
+  return parsed.toLocaleDateString("en-GB");
 }
 
 export const TruckDetailsModal = ({
   open,
   onClose,
   onPreview,
+  truckId,
 }: Props) => {
-      const [successType, setSuccessType] = useState<string | null>(null);
-    
+  const [successType, setSuccessType] = useState<string | null>(null);
+  const [details, setDetails] = useState<TruckDetailsApiResponse["data"] | null>(null);
+  const { token, logout } = useAuth();
+
+  useEffect(() => {
+    if (!open || !truckId || !token) {
+      setDetails(null);
+      return;
+    }
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    const loadDetails = async () => {
+      try {
+        const response = await fetch(
+          `https://65.1.152.16/api/trucks/${encodeURIComponent(truckId)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          },
+        );
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
+        const payload = (await response.json().catch(() => null)) as TruckDetailsApiResponse | null;
+        if (!cancelled && response.ok && payload?.data) {
+          setDetails(payload.data);
+        }
+      } catch (error) {
+        if (!cancelled && !(error instanceof DOMException && error.name === "AbortError")) {
+          setDetails(null);
+        }
+      }
+    };
+
+    void loadDetails();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [open, truckId, token, logout]);
+
   if (!open) return null;
+
+  const statusLabel = (details?.status || "").toLowerCase() === "inactive" ? "Inactive" : "Active";
 
   return (
     <div className="fixed inset-0 z-50 bg-black/30 flex items-center justify-center p-4">
@@ -22,10 +120,10 @@ export const TruckDetailsModal = ({
 
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <div className="flex items-center gap-4">
-            <h2 className="text-[20px] font-bold">TX4589</h2>
+            <h2 className="text-[20px] font-bold">{formatDisplayValue(details?.unitNumber || truckId)}</h2>
 
-            <span className="bg-green-600 text-white px-4 py-1 rounded-lg font-medium text-xs">
-              Active
+            <span className={`px-4 py-1 rounded-lg font-medium text-xs ${statusLabel === "Active" ? "bg-green-600 text-white" : "bg-gray-400 text-white"}`}>
+              {statusLabel}
             </span>
           </div>
 
@@ -43,10 +141,10 @@ export const TruckDetailsModal = ({
             </h3>
 
             <div className="grid lg:grid-cols-4 grid-cols-2 lg:gap-6 gap-3">
-              <Info label="Truck ID" value="TX4589" />
-              <Info label="Plate Number" value="TX4589" />
-              <Info label="Truck Type" value="TX4589" />
-              <Info label="Capacity" value="TX4589" />
+              <Info label="Truck ID" value={formatDisplayValue(details?.unitNumber)} />
+              <Info label="Plate Number" value={formatDisplayValue(details?.alias?.[0] ?? details?.unitNumber)} />
+              <Info label="Truck Type" value={formatDisplayValue(details?.assignedDriverId?.type ?? details?.contractorId?.companyName)} />
+              <Info label="Capacity" value={formatDisplayValue(details?.loadThisMonth)} />
             </div>
           </div>
 
@@ -57,9 +155,9 @@ export const TruckDetailsModal = ({
             </h3>
 
             <div className="grid  lg:grid-cols-3 grid-cols-2 lg:gap-6 gap-3">
-              <Info label="Insurance Expiry" value="12/03/2026" />
-              <Info label="DOT Inspection" value="VALUE" />
-              <Info label="Last Inspection" value="04/19/2026" />
+              <Info label="Insurance Expiry" value={formatDateValue(details?.insuranceExpiry)} />
+              <Info label="DOT Inspection" value={formatDateValue(details?.nextMaintenanceDueAt)} />
+              <Info label="Last Inspection" value={formatDateValue(details?.updatedAt ?? details?.assignedFromDate)} />
             </div>
           </div>
 
@@ -145,7 +243,7 @@ const DocumentRow = ({
         />
       </button>
 
-      <button onClick={()=>setSuccessType(true)}>
+      <button onClick={() => setSuccessType("File Downloaded")}>
         <Download
           size={20}
           className="text-[#0088FF]"

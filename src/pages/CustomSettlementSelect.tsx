@@ -1,14 +1,21 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+export type SettlementSelectOption = {
+  label: string;
+  value: string;
+};
+
 export function CustomSettlementSelect({
   value,
   onChange,
   options,
+  isDisabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
-  options: string[];
+  options: SettlementSelectOption[];
+  isDisabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -27,15 +34,18 @@ export function CustomSettlementSelect({
     };
   }, []);
 
+  const selectedLabel = options.find((option) => option.value === value)?.label;
+
   return (
     <div className="relative w-full" ref={ref}>
       <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full h-12 px-3 border border-[#A3A3A3] rounded-lg flex items-center justify-between text-left ${
+        onClick={() => !isDisabled && setOpen((v) => !v)}
+        disabled={isDisabled}
+        className={`w-full h-12 px-3 border border-[#A3A3A3] rounded-lg flex items-center justify-between text-left disabled:bg-[#F3F4F6] disabled:text-[#9CA3AF] ${
           !value ? "text-[#6B7280]" : "text-[#111827]"
         }`}
       >
-        <span className="text-sm">{value || "Select one..."}</span>
+        <span className="text-sm">{selectedLabel || "Select one..."}</span>
 
         {open ? (
           <ChevronUp size={20} />
@@ -58,14 +68,14 @@ export function CustomSettlementSelect({
 
           {options.map((option) => (
             <button
-              key={option}
+              key={option.value}
               onClick={() => {
-                onChange(option);
+                onChange(option.value);
                 setOpen(false);
               }}
               className="w-full px-4 py-3 text-left hover:bg-gray-50 text-sm"
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>

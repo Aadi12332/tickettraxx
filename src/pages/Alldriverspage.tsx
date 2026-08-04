@@ -21,9 +21,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import AssignTruckModal from "./AssignTruckModal";
 import ChangePayModal from "./ChangePayModal";
+import { useAuth } from "../context/AuthContext";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 
 interface Driver {
-  id: number;
+  id: string;
   name: string;
   truckId: string;
   payPercent: number;
@@ -33,6 +35,26 @@ interface Driver {
   earningAccess: boolean;
   status: "Active" | "Inactive";
 }
+
+interface DriverApiItem {
+  _id?: string;
+  name?: string;
+  driverCode?: string;
+  payPercent?: number | null;
+  status?: string | null;
+  access?: {
+    app?: boolean;
+    fsc?: boolean;
+    earning?: boolean;
+  };
+  contractorId?: {
+    contractorCode?: string;
+  } | null;
+}
+
+type DriversApiResponse = {
+  data: DriverApiItem[];
+};
 
 type SortKey = keyof Driver;
 type SortDir = "asc" | "desc" | null;
@@ -48,19 +70,31 @@ const SORT_OPTIONS = [
 type SortOption = (typeof SORT_OPTIONS)[number];
 
 const INITIAL_DRIVERS: Driver[] = [
-  { id: 1,  name: "Joseph Martin",  truckId: "TX4582", payPercent: 90, tickets: 20, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
-  { id: 2,  name: "David Hudson",   truckId: "TX4583", payPercent: 65, tickets: 12, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
-  { id: 3,  name: "Steve John",     truckId: "TX4584", payPercent: 80, tickets: 20, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
-  { id: 4,  name: "James harry",    truckId: "TX4528", payPercent: 88, tickets: 25, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
-  { id: 5,  name: "Alex Raymond",   truckId: "TX4235", payPercent: 90, tickets: 20, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
-  { id: 6,  name: "Johnny mathew",  truckId: "TX3356", payPercent: 50, tickets: 12, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
-  { id: 7,  name: "Kim Henry",      truckId: "TX9875", payPercent: 78, tickets: 17, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
-  { id: 8,  name: "Charles Wright", truckId: "TX2457", payPercent: 88, tickets: 17, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
-  { id: 9,  name: "Richard James",  truckId: "TX4593", payPercent: 67, tickets: 25, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
-  { id: 10, name: "Maria Chen",     truckId: "TX1122", payPercent: 72, tickets: 18, appAccess: false, fscAccess: true,  earningAccess: false, status: "Inactive" },
-  { id: 11, name: "Tom Baker",      truckId: "TX3344", payPercent: 55, tickets: 8,  appAccess: true,  fscAccess: false, earningAccess: false, status: "Inactive" },
-  { id: 12, name: "Sarah Lee",      truckId: "TX5566", payPercent: 91, tickets: 30, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
+  { id: "1",  name: "Joseph Martin",  truckId: "TX4582", payPercent: 90, tickets: 20, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
+  { id: "2",  name: "David Hudson",   truckId: "TX4583", payPercent: 65, tickets: 12, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
+  { id: "3",  name: "Steve John",     truckId: "TX4584", payPercent: 80, tickets: 20, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
+  { id: "4",  name: "James harry",    truckId: "TX4528", payPercent: 88, tickets: 25, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
+  { id: "5",  name: "Alex Raymond",   truckId: "TX4235", payPercent: 90, tickets: 20, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
+  { id: "6",  name: "Johnny mathew",  truckId: "TX3356", payPercent: 50, tickets: 12, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
+  { id: "7",  name: "Kim Henry",      truckId: "TX9875", payPercent: 78, tickets: 17, appAccess: true,  fscAccess: true,  earningAccess: false, status: "Active" },
+  { id: "8",  name: "Charles Wright", truckId: "TX2457", payPercent: 88, tickets: 17, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
+  { id: "9",  name: "Richard James",  truckId: "TX4593", payPercent: 67, tickets: 25, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
+  { id: "10", name: "Maria Chen",     truckId: "TX1122", payPercent: 72, tickets: 18, appAccess: false, fscAccess: true,  earningAccess: false, status: "Inactive" },
+  { id: "11", name: "Tom Baker",      truckId: "TX3344", payPercent: 55, tickets: 8,  appAccess: true,  fscAccess: false, earningAccess: false, status: "Inactive" },
+  { id: "12", name: "Sarah Lee",      truckId: "TX5566", payPercent: 91, tickets: 30, appAccess: true,  fscAccess: true,  earningAccess: true,  status: "Active" },
 ];
+
+const mapDriverApiItem = (driver: DriverApiItem, index: number): Driver => ({
+  id: driver._id ?? `driver-${index}`,
+  name: driver.name ?? "N/A",
+  truckId: driver.driverCode ?? driver.contractorId?.contractorCode ?? "N/A",
+  payPercent: typeof driver.payPercent === "number" ? driver.payPercent : 0,
+  tickets: 0,
+  appAccess: Boolean(driver.access?.app),
+  fscAccess: Boolean(driver.access?.fsc),
+  earningAccess: Boolean(driver.access?.earning),
+  status: driver.status === "inactive" ? "Inactive" : "Active",
+});
 
 const SHOW_OPTIONS = [5, 10, 20, 50];
 
@@ -251,7 +285,7 @@ function BulkActionsDropdown({ selectedCount }: { selectedCount: number }) {
   );
 }
 
-function ActionsMenu({ rowId }: { rowId: number }) {
+function ActionsMenu({ rowId }: { rowId: string }) {
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [assignTruck, setAssignTruck] = useState(false);
@@ -469,13 +503,47 @@ export default function AllDriversPage() {
   const [search, setSearch]           = useState("");
   const [showEntries, setShowEntries] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [sortKey, setSortKey]         = useState<SortKey | null>(null);
   const [sortDir, setSortDir]         = useState<SortDir>(null);
   const [sortBy, setSortBy]           = useState<SortOption | undefined>(undefined);
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const { token, logout } = useAuth();
 
   useEffect(() => { setCurrentPage(1); }, [search, showEntries, sortBy]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const controller = new AbortController();
+
+    const loadDrivers = async () => {
+      try {
+        const response = await fetch("https://65.1.152.16/api/drivers", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
+        const payload = (await response.json().catch(() => null)) as DriversApiResponse | null;
+
+        if (response.ok && Array.isArray(payload?.data)) {
+          setDrivers(payload.data.map((driver, index) => mapDriverApiItem(driver, index)));
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setDrivers(INITIAL_DRIVERS);
+        }
+      }
+    };
+
+    void loadDrivers();
+    return () => controller.abort();
+  }, [logout, token]);
 
   function applySortOption(opt: SortOption) {
     setSortBy(opt);
@@ -518,7 +586,7 @@ export default function AllDriversPage() {
     else { setSortKey(null); setSortDir(null); }
   }
 
-  function updateDriver(id: number, field: keyof Driver, value: boolean) {
+  function updateDriver(id: string, field: keyof Driver, value: boolean) {
     setDrivers((prev) => prev.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
   }
 
@@ -529,7 +597,7 @@ export default function AllDriversPage() {
     if (allSelected) setSelectedRows((prev) => prev.filter((id) => !paginated.find((r) => r.id === id)));
     else setSelectedRows((prev) => [...new Set([...prev, ...paginated.map((r) => r.id)])]);
   }
-  function toggleRow(id: number) {
+  function toggleRow(id: string) {
     setSelectedRows((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   }
 

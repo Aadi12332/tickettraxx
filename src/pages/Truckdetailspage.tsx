@@ -15,22 +15,54 @@ import {
   MinusCircle,
   UserCircle,
   XSquare,
-  Users, UserCheck, UserX, UserPlus
+  Users,
+  UserCheck,
+  UserX,
+  UserPlus,
 } from "lucide-react";
 import { TruckDetailsModal } from "./TruckDetailsModal";
 import DocumentPreviewModal from "./DocumentPreviewModal";
 import truckDetails from "../assets/images/truck-details.png";
 import { AssignDriverModal } from "./AssignDriverModal";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 
 interface TruckRow {
-  id: number;
+  id: string;
   truckId: string;
   assignedTo: string;
   jobs: number;
   load: number;
   lastInspection: string;
   active: boolean;
+}
+
+interface TruckApiItem {
+  _id?: string;
+  unitNumber?: string;
+  truckName?: string;
+  alias?: string[];
+  assignedDriverId?: {
+    name?: string;
+  } | null;
+  jobsCount?: number | null;
+  loadThisMonth?: number | null;
+  status?: string | null;
+  assignedFromDate?: string | null;
+}
+
+interface TrucksSummaryApiResponse {
+  data: {
+    totalTrucks?: number;
+    activeTrucks?: number;
+    inactiveTrucks?: number;
+    assignedAliases?: number;
+  };
+}
+
+interface TrucksApiResponse {
+  data: TruckApiItem[];
 }
 
 type SortKey = keyof TruckRow;
@@ -43,116 +75,17 @@ const SORT_OPTIONS: SortOption[] = [
   "Inspection (Latest)",
 ];
 
-const INITIAL_TRUCKS: TruckRow[] = [
-  {
-    id: 1,
-    truckId: "TX4578",
-    assignedTo: "Joseph Martin",
-    jobs: 10,
-    load: 220,
-    lastInspection: "10/07/2025",
-    active: true,
-  },
-  {
-    id: 2,
-    truckId: "TX5682",
-    assignedTo: "James Mathew",
-    jobs: 8,
-    load: 200,
-    lastInspection: "14/07/2025",
-    active: true,
-  },
-  {
-    id: 3,
-    truckId: "TX6820",
-    assignedTo: "Alex Robert",
-    jobs: 5,
-    load: 180,
-    lastInspection: "18/07/2025",
-    active: false,
-  },
-  {
-    id: 4,
-    truckId: "TX5973",
-    assignedTo: "Richard Henry",
-    jobs: 9,
-    load: 170,
-    lastInspection: "20/07/2025",
-    active: true,
-  },
-  {
-    id: 5,
-    truckId: "TX6891",
-    assignedTo: "Mike Kim",
-    jobs: 12,
-    load: 190,
-    lastInspection: "22/07/2025",
-    active: false,
-  },
-  {
-    id: 6,
-    truckId: "TX5791",
-    assignedTo: "Charles Wright",
-    jobs: 15,
-    load: 210,
-    lastInspection: "25/07/2025",
-    active: true,
-  },
-  {
-    id: 7,
-    truckId: "TX4579",
-    assignedTo: "James Harry",
-    jobs: 10,
-    load: 230,
-    lastInspection: "27/07/2025",
-    active: true,
-  },
-  {
-    id: 8,
-    truckId: "TX9836",
-    assignedTo: "Joe Tim",
-    jobs: 6,
-    load: 220,
-    lastInspection: "28/07/2025",
-    active: true,
-  },
-  {
-    id: 9,
-    truckId: "TX5762",
-    assignedTo: "Michael George",
-    jobs: 9,
-    load: 240,
-    lastInspection: "30/07/2025",
-    active: false,
-  },
-  {
-    id: 10,
-    truckId: "TX1122",
-    assignedTo: "Maria Chen",
-    jobs: 7,
-    load: 195,
-    lastInspection: "02/08/2025",
-    active: true,
-  },
-  {
-    id: 11,
-    truckId: "TX3344",
-    assignedTo: "Tom Baker",
-    jobs: 4,
-    load: 150,
-    lastInspection: "05/08/2025",
-    active: false,
-  },
-  {
-    id: 12,
-    truckId: "TX5566",
-    assignedTo: "Sarah Lee",
-    jobs: 14,
-    load: 260,
-    lastInspection: "08/08/2025",
-    active: true,
-  },
-];
+const INITIAL_TRUCKS: TruckRow[] = [];
+
+const mapTruckApiItem = (truck: TruckApiItem, index: number): TruckRow => ({
+  id: truck._id ?? `truck-${index}`,
+  truckId: truck.unitNumber || truck.truckName || "N/A",
+  assignedTo: truck.assignedDriverId?.name || "Unassigned",
+  jobs: typeof truck.jobsCount === "number" ? truck.jobsCount : 0,
+  load: typeof truck.loadThisMonth === "number" ? truck.loadThisMonth : 0,
+  lastInspection: "N/A",
+  active: (truck.status || "").toLowerCase() !== "inactive",
+});
 
 const SHOW_OPTIONS = [5, 10, 20, 50];
 
@@ -297,14 +230,13 @@ function SortDropdown({
   );
 }
 
-function ActionsMenu({ rowId }: { rowId: number }) {
+function ActionsMenu({ rowId, active, onStatusChange }: { rowId: string; active: boolean; onStatusChange?: (id: string, active: boolean) => void | Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [successType, setSuccessType] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-  console.log(rowId);
-  const [assignDriverOpen, setAssignDriverOpen] =
-  useState(false);
+  const [assignDriverOpen, setAssignDriverOpen] = useState(false);
+  const { token, logout } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -316,6 +248,59 @@ function ActionsMenu({ rowId }: { rowId: number }) {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  const handleToggleStatus = async (nextStatus: "active" | "inactive") => {
+    if (!token || !rowId) return;
+
+    try {
+      const response = await fetch(`https://65.1.152.16/api/trucks/${encodeURIComponent(rowId)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) return;
+
+      await onStatusChange?.(rowId, nextStatus === "active");
+      setSuccessType(nextStatus === "active" ? "Mark as Active" : "Mark as Inactive");
+      setOpen(false);
+    } catch {
+      setSuccessType(null);
+    }
+  };
+
+  const handleRemoveTruck = async () => {
+    if (!token || !rowId) return;
+
+    try {
+      const response = await fetch(`https://65.1.152.16/api/trucks/${encodeURIComponent(rowId)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) return;
+
+      setSuccessType("Truck Removed");
+      setOpen(false);
+    } catch {
+      setSuccessType(null);
+    }
+  };
+
   const actions = [
     {
       label: "View Details",
@@ -325,28 +310,38 @@ function ActionsMenu({ rowId }: { rowId: number }) {
         setOpen(false);
       },
     },
+    ...(active
+      ? [
+          {
+            label: "Mark as Inactive",
+            Icon: XSquare,
+            onClick: () => {
+              void handleToggleStatus("inactive");
+            },
+          },
+        ]
+      : [
+          {
+            label: "Mark as Active",
+            Icon: Check,
+            onClick: () => {
+              void handleToggleStatus("active");
+            },
+          },
+        ]),
     {
-      label: "Mark as Inactive",
-      Icon: XSquare,
+      label: "Assign Driver",
+      Icon: UserCircle,
       onClick: () => {
-        setSuccessType("Mark as Inactive");
+        setAssignDriverOpen(true);
         setOpen(false);
       },
     },
- {
-  label: "Assign Driver",
-  Icon: UserCircle,
-  onClick: () => {
-    setAssignDriverOpen(true);
-    setOpen(false);
-  },
-},
     {
       label: "Remove Truck",
       Icon: MinusCircle,
       onClick: () => {
-        setSuccessType("Truck Removed");
-        setOpen(false);
+        void handleRemoveTruck();
       },
     },
   ];
@@ -382,6 +377,7 @@ function ActionsMenu({ rowId }: { rowId: number }) {
         open={detailsOpen}
         onClose={() => setDetailsOpen(false)}
         onPreview={() => setPreviewOpen(true)}
+        truckId={rowId}
       />
 
       <DocumentPreviewModal
@@ -391,12 +387,12 @@ function ActionsMenu({ rowId }: { rowId: number }) {
       />
 
       <AssignDriverModal
-  open={assignDriverOpen}
-  onClose={() => setAssignDriverOpen(false)}
-  onAssign={(data) => {
-    console.log("Assigned:", data);
-  }}
-/>
+        open={assignDriverOpen}
+        onClose={() => setAssignDriverOpen(false)}
+        onAssign={(data) => {
+          console.log("Assigned:", data);
+        }}
+      />
 
       {successType && (
         <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
@@ -746,19 +742,106 @@ export default function TruckDetailsPage() {
   const [search, setSearch] = useState("");
   const [showEntries, setShowEntries] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [sortBy, setSortBy] = useState<SortOption | undefined>(undefined);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [summary, setSummary] = useState({
+    totalTrucks: 0,
+    activeTrucks: 0,
+    inactiveTrucks: 0,
+    assignedAliases: 0,
+  });
   const bulkRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { token, logout } = useAuth();
 
   useEffect(() => {
     setCurrentPage(1);
   }, [search, showEntries, sortBy]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const controller = new AbortController();
+
+    const loadSummary = async () => {
+      try {
+        const response = await fetch("https://65.1.152.16/api/trucks/summary", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
+        const payload = (await response
+          .json()
+          .catch(() => null)) as TrucksSummaryApiResponse | null;
+        if (response.ok && payload?.data) {
+          setSummary({
+            totalTrucks: payload.data.totalTrucks ?? 0,
+            activeTrucks: payload.data.activeTrucks ?? 0,
+            inactiveTrucks: payload.data.inactiveTrucks ?? 0,
+            assignedAliases: payload.data.assignedAliases ?? 0,
+          });
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setSummary({
+            totalTrucks: 0,
+            activeTrucks: 0,
+            inactiveTrucks: 0,
+            assignedAliases: 0,
+          });
+        }
+      }
+    };
+
+    void loadSummary();
+    return () => controller.abort();
+  }, [logout, token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const controller = new AbortController();
+
+    const loadTrucks = async () => {
+      try {
+        const response = await fetch("https://65.1.152.16/api/trucks", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
+        const payload = (await response
+          .json()
+          .catch(() => null)) as TrucksApiResponse | null;
+        if (response.ok && Array.isArray(payload?.data)) {
+          setTrucks(
+            payload.data.map((truck, index) => mapTruckApiItem(truck, index)),
+          );
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setTrucks(INITIAL_TRUCKS);
+        }
+      }
+    };
+
+    void loadTrucks();
+    return () => controller.abort();
+  }, [logout, token]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -815,18 +898,45 @@ export default function TruckDetailsPage() {
     safePage * showEntries,
   );
 
-  const total = trucks.length;
-  const active = trucks.filter((t) => t.active).length;
-  const inactive = trucks.filter((t) => !t.active).length;
+  const total = summary.totalTrucks || trucks.length;
+  const active = summary.activeTrucks || trucks.filter((t) => t.active).length;
+  const inactive =
+    summary.inactiveTrucks || trucks.filter((t) => !t.active).length;
+  const assignedAliases = summary.assignedAliases;
 
-  function updateTruckStatus(id: number, value: boolean) {
-    setTrucks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, active: value } : t)),
-    );
+  async function updateTruckStatus(id: string, value: boolean) {
+    if (!token) return;
+
+    try {
+      const response = await fetch(
+        `https://65.1.152.16/api/trucks/${encodeURIComponent(id)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: value ? "active" : "inactive" }),
+        },
+      );
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) return;
+
+      setTrucks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, active: value } : t)),
+      );
+    } catch {
+      // Ignore failed status updates.
+    }
   }
 
   function addTruck(data: Omit<TruckRow, "id">) {
-    const newId = Math.max(...trucks.map((t) => t.id)) + 1;
+    const newId = `${Date.now()}`;
     setTrucks((prev) => [...prev, { id: newId, ...data }]);
   }
 
@@ -846,7 +956,7 @@ export default function TruckDetailsPage() {
       ]);
   }
 
-  function toggleRow(id: number) {
+  function toggleRow(id: string) {
     setSelectedRows((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -863,7 +973,7 @@ export default function TruckDetailsPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
-          onClick={() => navigate("/dashboard/trucks/add")}
+            onClick={() => navigate("/dashboard/trucks/add")}
             className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors"
           >
             <Plus size={15} /> Add Truck
@@ -880,40 +990,40 @@ export default function TruckDetailsPage() {
         </div>
       </div>
 
-    <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
-  <StatCard
-    label="Total Trucks"
-    value={total}
-    trend="+19.01%"
-    trendBg="#F3E8FF"
-    trendColor="#9333EA"
-    icon={<Users size={18} className="text-[#1D3461]" />}
-  />
-  <StatCard
-    label="Active Trucks"
-    value={active}
-    trend="+19.01%"
-    trendBg="#FFEDD5"
-    trendColor="#EA580C"
-    icon={<UserCheck size={18} className="text-[#1D3461]" />}
-  />
-  <StatCard
-    label="Inactive Trucks"
-    value={inactive}
-    trend="+19.01%"
-    trendBg="#F1F5F9"
-    trendColor="#475569"
-    icon={<UserX size={18} className="text-[#1D3461]" />}
-  />
-  <StatCard
-    label="Assigned Aliases"
-    value={20}
-    trend="+19.01%"
-    trendBg="#DBEAFE"
-    trendColor="#2563EB"
-    icon={<UserPlus size={18} className="text-[#1D3461]" />}
-  />
-</div>
+      <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4 mb-5">
+        <StatCard
+          label="Total Trucks"
+          value={total}
+          trend="+19.01%"
+          trendBg="#F3E8FF"
+          trendColor="#9333EA"
+          icon={<Users size={18} className="text-[#1D3461]" />}
+        />
+        <StatCard
+          label="Active Trucks"
+          value={active}
+          trend="+19.01%"
+          trendBg="#FFEDD5"
+          trendColor="#EA580C"
+          icon={<UserCheck size={18} className="text-[#1D3461]" />}
+        />
+        <StatCard
+          label="Inactive Trucks"
+          value={inactive}
+          trend="+19.01%"
+          trendBg="#F1F5F9"
+          trendColor="#475569"
+          icon={<UserX size={18} className="text-[#1D3461]" />}
+        />
+        <StatCard
+          label="Assigned Aliases"
+          value={assignedAliases}
+          trend="+19.01%"
+          trendBg="#DBEAFE"
+          trendColor="#2563EB"
+          icon={<UserPlus size={18} className="text-[#1D3461]" />}
+        />
+      </div>
 
       <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden">
         <div className="flex items-center gap-3 flex-wrap justify-between px-5 py-4 border-b border-[#E5E7EB]">
@@ -1065,7 +1175,9 @@ export default function TruckDetailsPage() {
                       <div className="flex items-center gap-2">
                         <Toggle
                           enabled={row.active}
-                          onChange={(v) => updateTruckStatus(row.id, v)}
+                          onChange={(v) => {
+                            void updateTruckStatus(row.id, v);
+                          }}
                         />
                         <span
                           className={`text-xs font-semibold ${
@@ -1077,7 +1189,7 @@ export default function TruckDetailsPage() {
                       </div>
                     </td>
                     <td className="px-3 py-3.5">
-                      <ActionsMenu rowId={row.id} />
+                      <ActionsMenu rowId={row.id} active={row.active} onStatusChange={updateTruckStatus} />
                     </td>
                   </tr>
                 ))

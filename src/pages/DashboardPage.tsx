@@ -13,6 +13,7 @@ import DateRangeModal from "./DateRangeModal";
 import { DateRange } from "react-day-picker";
 import { endOfDay, format, startOfDay } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 
 const statCards = [
   {
@@ -187,7 +188,7 @@ const formatCurrency = (value: number, fractionDigits = 0) =>
   }).format(value);
 
 export const DashboardPage = () => {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const [selectedLoad, setSelectedLoad] = useState<any>(null);
   const [openDateModal, setOpenDateModal] = useState(false);
   const [range, setRange] = useState<DateRange | undefined>();
@@ -224,6 +225,12 @@ export const DashboardPage = () => {
           headers: { Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
         const payload = (await response.json().catch(() => null)) as ContractorDashboardResponse | null;
 
         if (response.ok && payload?.data) {
@@ -238,7 +245,7 @@ export const DashboardPage = () => {
 
     void loadDashboard();
     return () => controller.abort();
-  }, [token, startDate, endDate]);
+  }, [token, startDate, endDate, logout]);
 
   const liveRecentLoads: Load[] = dashboardData
     ? dashboardData.recentLoads
