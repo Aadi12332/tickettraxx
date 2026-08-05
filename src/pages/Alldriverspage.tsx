@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Download,
   RefreshCw,
@@ -16,7 +16,6 @@ import {
   Check,
   Truck,
   CircleDollarSignIcon,
-  Ban,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import AssignTruckModal from "./AssignTruckModal";
@@ -95,6 +94,38 @@ const mapDriverApiItem = (driver: DriverApiItem, index: number): Driver => ({
   earningAccess: Boolean(driver.access?.earning),
   status: driver.status === "inactive" ? "Inactive" : "Active",
 });
+
+async function patchDriverAccess(
+  token: string | null,
+  logout: () => void,
+  driverId: string,
+  body: Record<string, unknown>
+): Promise<boolean> {
+  if (!token) return false;
+
+  try {
+    const response = await fetch(
+      `https://65.1.152.16/api/drivers/${driverId}/access`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    if (await hasInvalidOrExpiredTokenError(response)) {
+      logout();
+      return false;
+    }
+
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
 const SHOW_OPTIONS = [5, 10, 20, 50];
 
@@ -285,16 +316,76 @@ function BulkActionsDropdown({ selectedCount }: { selectedCount: number }) {
   );
 }
 
-function ActionsMenu({ rowId }: { rowId: string }) {
+function ActionsMenu({
+  rowId,
+  appAccess,
+  fscAccess,
+  earningAccess,
+  onUpdate,
+  onRefresh,
+}: {
+  rowId: string;
+  appAccess: boolean;
+  fscAccess: boolean;
+  earningAccess: boolean;
+  onUpdate: (id: string, field: keyof Driver, value: boolean | number) => void;
+  onRefresh: () => void;
+}) {
+  const { token, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [assignTruck, setAssignTruck] = useState(false);
   const [changePay, setChangePay] = useState(false);
   const [payPercentage, setPayPercentage] = useState("");
   const [successTitle, setSuccessTitle] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  console.log(rowId);
   const ref = useRef<HTMLDivElement>(null);
+
+  const handleToggleAppLogin = async () => {
+    setError(null);
+    const newAccess = !appAccess;
+    const ok = await patchDriverAccess(token, logout, rowId, {
+      access: {
+        app: newAccess,
+        fsc: fscAccess,
+        earning: earningAccess,
+      },
+    });
+
+    if (ok) {
+      onUpdate(rowId, "appAccess", newAccess);
+      setSuccessTitle(newAccess ? "App Login Enabled" : "App Login Disabled");
+      setShowSuccess(true);
+      setOpen(false);
+      onRefresh();
+    } else {
+      setError(newAccess ? "Unable to enable app login." : "Unable to disable app login.");
+    }
+  };
+
+  const handlePaySave = async () => {
+    const payValue = Number(payPercentage);
+    if (Number.isNaN(payValue) || payValue < 0) {
+      setError("Enter a valid pay percentage.");
+      return;
+    }
+
+    setError(null);
+    const ok = await patchDriverAccess(token, logout, rowId, {
+      payPercent: payValue,
+    });
+
+    if (ok) {
+      onUpdate(rowId, "payPercent", payValue);
+      setSuccessTitle("Pay % Updated");
+      setShowSuccess(true);
+      setChangePay(false);
+      onRefresh();
+    } else {
+      setError("Unable to update pay percentage.");
+    }
+  };
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
@@ -304,11 +395,13 @@ function ActionsMenu({ rowId }: { rowId: string }) {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  const appLoginLabel = appAccess ? "Disable App Login" : "Enable App Login";
+  const appLoginIcon = appAccess ? EyeOff : Eye;
   const actions: { label: string; icon: React.ElementType; onClick: () => void }[] = [
-    { label: "View Profile",    icon: Eye,          onClick: () => { navigate("/dashboard/drivers/details"); setOpen(false); } },
+    { label: "View Profile",    icon: Eye,          onClick: () => { navigate(`/dashboard/drivers/${rowId}`); setOpen(false); } },
     { label: "Assign Truck",     icon: Truck,          onClick: () => { setAssignTruck(true); setOpen(false); } },
-    { label: "Change Pay%",    icon: CircleDollarSignIcon, onClick: () => { setChangePay(true); setOpen(false); } },
-    { label: "Disable App Login",  icon: Ban, onClick: () => { setSuccessTitle("App Login Disabled"); setOpen(false); setShowSuccess(true); } },
+    { label: "Change Pay%", icon: CircleDollarSignIcon, onClick: () => { setChangePay(true); setOpen(false); } },
+    { label: appLoginLabel, icon: appLoginIcon, onClick: () => { handleToggleAppLogin(); setOpen(false); } },
   ];
 
   return (
@@ -352,11 +445,9 @@ function ActionsMenu({ rowId }: { rowId: string }) {
   onClose={() => setChangePay(false)}
   value={payPercentage}
   onChange={setPayPercentage}
-  onSave={() => {
-    console.log(payPercentage);
-    setChangePay(false);
-  }}
+  onSave={handlePaySave}
 />
+{error ? <p className="mt-2 text-sm text-[#EF4444]">{error}</p> : null}
 
       {showSuccess && (
         <div className="fixed inset-0 bg-black/50 z-[1000] flex items-center justify-center p-4">
@@ -510,18 +601,14 @@ export default function AllDriversPage() {
   const [downloadOpen, setDownloadOpen] = useState(false);
   const { token, logout } = useAuth();
 
-  useEffect(() => { setCurrentPage(1); }, [search, showEntries, sortBy]);
+  const loadDrivers = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!token) return;
 
-  useEffect(() => {
-    if (!token) return;
-
-    const controller = new AbortController();
-
-    const loadDrivers = async () => {
       try {
         const response = await fetch("https://65.1.152.16/api/drivers", {
           headers: { Authorization: `Bearer ${token}` },
-          signal: controller.signal,
+          signal,
         });
 
         if (await hasInvalidOrExpiredTokenError(response)) {
@@ -539,11 +626,19 @@ export default function AllDriversPage() {
           setDrivers(INITIAL_DRIVERS);
         }
       }
-    };
+    },
+    [logout, token]
+  );
 
-    void loadDrivers();
+  useEffect(() => { setCurrentPage(1); }, [search, showEntries, sortBy]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const controller = new AbortController();
+    void loadDrivers(controller.signal);
     return () => controller.abort();
-  }, [logout, token]);
+  }, [loadDrivers, token]);
 
   function applySortOption(opt: SortOption) {
     setSortBy(opt);
@@ -586,8 +681,57 @@ export default function AllDriversPage() {
     else { setSortKey(null); setSortDir(null); }
   }
 
-  function updateDriver(id: string, field: keyof Driver, value: boolean) {
-    setDrivers((prev) => prev.map((d) => (d.id === id ? { ...d, [field]: value } : d)));
+  async function updateDriver(
+    id: string,
+    field: keyof Driver,
+    value: boolean | number
+  ) {
+    const previousDrivers = [...drivers];
+    const row = drivers.find((driver) => driver.id === id);
+    if (!row) return;
+
+    setDrivers((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, [field]: value } : d))
+    );
+
+    let body: Record<string, unknown> | null = null;
+
+    if (field === "appAccess") {
+      body = {
+        access: {
+          app: Boolean(value),
+          fsc: row.fscAccess,
+          earning: row.earningAccess,
+        },
+      };
+    } else if (field === "fscAccess") {
+      body = {
+        access: {
+          app: row.appAccess,
+          fsc: Boolean(value),
+          earning: row.earningAccess,
+        },
+      };
+    } else if (field === "earningAccess") {
+      body = {
+        access: {
+          app: row.appAccess,
+          fsc: row.fscAccess,
+          earning: Boolean(value),
+        },
+      };
+    } else if (field === "payPercent") {
+      body = { payPercent: Number(value) };
+    }
+
+    if (body) {
+      const ok = await patchDriverAccess(token, logout, id, body);
+      if (!ok) {
+        setDrivers(previousDrivers);
+      } else {
+        await loadDrivers();
+      }
+    }
   }
 
   const allSelected  = paginated.length > 0 && paginated.every((r) => selectedRows.includes(r.id));
@@ -746,7 +890,7 @@ export default function AllDriversPage() {
                         className="w-4 h-4 rounded border-[#D1D5DB] accent-[#1E2A4A] cursor-pointer"
                       />
                     </td>
-                    <td className="px-3 py-3.5 font-semibold text-[#1F2020] whitespace-nowrap cursor-pointer" onClick={() => navigate("/dashboard/drivers/details")}>{row.name}</td>
+                    <td className="px-3 py-3.5 font-semibold text-[#1F2020] whitespace-nowrap cursor-pointer" onClick={() => navigate(`/dashboard/drivers/${row.id}`)}>{row.name}</td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.truckId}</td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.payPercent}</td>
                     <td className="px-3 py-3.5 text-[#1F2020] whitespace-nowrap">{row.tickets}</td>
@@ -769,7 +913,14 @@ export default function AllDriversPage() {
                       </span>
                     </td>
                     <td className="px-3 py-3.5">
-                      <ActionsMenu rowId={row.id} />
+                      <ActionsMenu
+                        rowId={row.id}
+                        appAccess={row.appAccess}
+                        fscAccess={row.fscAccess}
+                        earningAccess={row.earningAccess}
+                        onUpdate={updateDriver}
+                        onRefresh={() => void loadDrivers()}
+                      />
                     </td>
                   </tr>
                 ))

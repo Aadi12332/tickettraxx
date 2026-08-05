@@ -51,7 +51,7 @@ const AppRoutes = () => {
 
           <Route path="/dashboard/drivers" element={<AllDriversPage />} />
 
-          <Route path="/dashboard/drivers/details" element={<DriverDetailPage />} />
+          <Route path="/dashboard/drivers/:driverId" element={<DriverDetailPage />} />
 
           <Route path="/dashboard/drivers/add-driver" element={<AddDriver />} />
 

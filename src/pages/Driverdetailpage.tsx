@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Phone,
@@ -19,10 +19,12 @@ import {
   CalendarDays,
   MessageSquare,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import DateRangeModal from "./DateRangeModal";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
+import { useAuth } from "../context/AuthContext";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 interface TicketRow {
   id: number;
   ticketNo: string;
@@ -43,6 +45,38 @@ interface TicketRow {
 
 type Tab = "Tickets" | "Statement";
 type SortDir = "asc" | "desc" | null;
+
+interface ContractorInfo {
+  isSelfContractor?: boolean;
+  ownerDriverId?: string | null;
+  _id?: string;
+  companyName?: string;
+  contractorCode?: string;
+  phone?: string;
+  email?: string;
+}
+
+interface DriverDetail {
+  access?: {
+    app?: boolean;
+    fsc?: boolean;
+    earning?: boolean;
+  };
+  paymentType?: string;
+  _id: string;
+  name?: string;
+  userId?: string | null;
+  contractorId?: ContractorInfo | null;
+  type?: string;
+  dob?: string | null;
+  payPercent?: number;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  phone?: string;
+  address?: string;
+  email?: string;
+}
 
 const TICKET_ROWS: TicketRow[] = [
   {
@@ -813,129 +847,359 @@ function StatementTab() {
 }
 
 export default function DriverDetailPage() {
+  const { token, logout } = useAuth();
+  const { driverId } = useParams<{ driverId: string }>();
   const [activeTab, setActiveTab] = useState<Tab>("Tickets");
   const [isActive, setIsActive] = useState(true);
+  const [driver, setDriver] = useState<DriverDetail | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState(false);
+  const [formValues, setFormValues] = useState({
+    phone: "",
+    email: "",
+    address: "",
+  });
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (!token || !driverId) return;
+
+    const controller = new AbortController();
+
+    const fetchDriver = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(
+          `https://65.1.152.16/api/drivers/${driverId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            signal: controller.signal,
+          },
+        );
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
+        const payload = (await response.json().catch(() => null)) as {
+          data?: DriverDetail;
+        } | null;
+
+        if (response.ok && payload?.data) {
+          setDriver(payload.data);
+          setFormValues({
+            phone: payload.data.phone ?? "",
+            email: payload.data.email ?? "",
+            address: payload.data.address ?? "",
+          });
+          setIsActive(payload.data.status !== "inactive");
+        } else {
+          setError("Unable to load driver details.");
+        }
+      } catch (fetchError) {
+        if (!(fetchError instanceof DOMException && fetchError.name === "AbortError")) {
+          setError("Unable to load driver details.");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void fetchDriver();
+    return () => controller.abort();
+  }, [driverId, logout, token]);
+
+  const handleInputChange = (field: keyof typeof formValues, value: string) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const saveDriverDetails = async () => {
+    if (!token || !driverId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`https://65.1.152.16/api/drivers/${driverId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          phone: formValues.phone,
+          address: formValues.address,
+          email: formValues.email,
+        }),
+      });
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to save driver details.");
+      }
+
+      if (driver) {
+        setDriver({
+          ...driver,
+          phone: formValues.phone,
+          address: formValues.address,
+          email: formValues.email,
+        });
+      }
+      setEditMode(false);
+    } catch {
+      setError("Unable to save driver details.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteDriver = async () => {
+    if (!token || !driverId) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`https://65.1.152.16/api/drivers/${driverId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Unable to delete driver.");
+      }
+
+      navigate("/dashboard/drivers");
+    } catch {
+      setError("Unable to delete driver.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const driverName = driver?.name ?? "Driver Name";
+  const contractorLabel =
+    driver?.contractorId?.companyName ?? "New Jersey";
+
+  if (loading && !driver) {
+    return (
+      <div className="p-6 text-sm text-[#374151]">
+        Loading driver details...
+      </div>
+    );
+  }
+
+  if (!driver) {
+    return (
+      <div className="p-6 text-sm text-[#EF4444]">
+        {error ?? "Unable to load driver details."}
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-[#F3F4F6]">
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors whitespace-nowrap"
-        >
-          <ArrowLeft size={16} />
-          Back
-        </button>
-        <div>
-          <h1 className="text-[20px] font-bold text-[#111827]">All Drivers</h1>
+    <div className="space-y-6">
+      <div className="bg-[#F3F4F6] p-6 rounded-lg">
+        <div className="flex items-center gap-4 mb-6">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors whitespace-nowrap"
+          >
+            <ArrowLeft size={16} />
+            Back
+          </button>
+          <div>
+            <h1 className="text-[20px] font-bold text-[#111827]">Driver Details</h1>
+            <p className="text-sm text-[#6B7280]">{contractorLabel}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
+          <div className="px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
+            <div className="flex items-start gap-6">
+              <div className="relative w-32 h-32 rounded-full overflow-hidden bg-[#E5E7EB] flex-shrink-0 border-4 border-[#F3F4F6] shadow">
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    driverName,
+                  )}&background=1D3461&color=fff&size=128`}
+                  alt={driverName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-bold text-[#1D3461]">
+                    {driverName}
+                  </h2>
+                  <span className="w-5 h-5 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
+                    <Check size={12} className="text-white stroke-[3]" />
+                  </span>
+                </div>
+                <p className="text-sm text-[#374151] mt-2">
+                  {contractorLabel}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
+                <Phone size={14} /> Call
+              </button>
+              <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
+                <MessageSquare size={14} /> Message
+              </button>
+              <button
+                onClick={() => setIsActive((p) => !p)}
+                className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-[#EF4444] text-white hover:bg-[#DC2626]"
+                    : "bg-[#22C55E] text-white hover:bg-[#16A34A]"
+                }`}
+              >
+                {isActive ? "Deactivate Account" : "Activate Account"}
+              </button>
+            </div>
+          </div>
+
+          <div className="pr-6 pl-44 -mt-12 py-6 bg-[#D9D9D9] border-t border-[#E5E7EB] flex flex-wrap items-center gap-8">
+            <div className="flex items-center gap-2 text-sm text-[#374151]">
+              <CreditCard size={16} className="text-[#1D3461]" />
+              <span className="font-medium text-[#1D3461]">Driver ID :</span>
+              <span>{driver._id}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-[#374151]">
+              <Calendar size={16} className="text-[#1D3461]" />
+              <span className="font-medium text-[#1D3461]">Added on :</span>
+              <span>
+                {driver.createdAt
+                  ? format(new Date(driver.createdAt), "dd MMM yyyy")
+                  : "N/A"}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-
-  <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
-  <div className="px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
-    <div className="flex items-start gap-6">
-      <div className="relative w-32 h-32 rounded-full overflow-hidden bg-[#E5E7EB] flex-shrink-0 border-4 border-[#F3F4F6] shadow">
-        <img
-          src="https://randomuser.me/api/portraits/men/32.jpg"
-          alt="Joseph Martin"
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              "https://ui-avatars.com/api/?name=Joseph+Martin&background=1D3461&color=fff&size=80";
-          }}
-        />
-      </div>
-      <div>
-        <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold text-[#1D3461]">
-            Joseph Martin
-          </h2>
-          <span className="w-5 h-5 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
-            <Check size={12} className="text-white stroke-[3]" />
-          </span>
-        </div>
-        <p className="text-sm text-[#374151] mt-5">New Jersey</p>
-      </div>
-    </div>
-
-    <div className="flex items-center gap-2 flex-wrap">
-      <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
-        <Phone size={14} /> Call
-      </button>
-      <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
-        <MessageSquare size={14} /> Message
-      </button>
-      <button
-        onClick={() => setIsActive((p) => !p)}
-        className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-          isActive
-            ? "bg-[#EF4444] text-white hover:bg-[#DC2626]"
-            : "bg-[#22C55E] text-white hover:bg-[#16A34A]"
-        }`}
-      >
-        {isActive ? "Deactivate Account" : "Activate Account"}
-      </button>
-    </div>
-  </div>
-
-  <div className="pr-6 pl-44 -mt-12 py-6 bg-[#D9D9D9] border-t border-[#E5E7EB] flex flex-wrap items-center gap-8">
-    <div className="flex items-center gap-2 text-sm text-[#374151]">
-      <CreditCard size={16} className="text-[#1D3461]" />
-      <span className="font-medium text-[#1D3461]">Driver ID :</span>
-      <span>CLT-0024</span>
-    </div>
-    <div className="flex items-center gap-2 text-sm text-[#374151]">
-      <Calendar size={16} className="text-[#1D3461]" />
-      <span className="font-medium text-[#1D3461]">Added on :</span>
-      <span>1st Jan 2023</span>
-    </div>
-  </div>
-</div>
 
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
         <div className="px-6 py-4 border-b border-[#E5E7EB] flex items-center gap-3">
           <h3 className="text-base font-bold text-[#111827]">
             Basic Information
           </h3>
-          <button className="p-1 rounded-md hover:bg-gray-100 transition-colors text-[#6B7280]">
-            <Edit2 size={14} />
-          </button>
-          <button className="p-1 rounded-md hover:bg-red-50 transition-colors text-[#EF4444]">
-            <Trash2 size={14} />
-          </button>
+          {editMode ? (
+            <>
+              <button
+                onClick={saveDriverDetails}
+                disabled={loading}
+                className="px-4 py-2 rounded-lg bg-[#1D3461] text-white text-sm font-semibold hover:bg-[#16213a] transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setEditMode(false);
+                  setFormValues({
+                    phone: driver.phone ?? "",
+                    email: driver.email ?? "",
+                    address: driver.address ?? "",
+                  });
+                }}
+                className="px-4 py-2 rounded-lg bg-[#F3F4F6] text-[#374151] text-sm font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => setEditMode(true)}
+                className="p-1 rounded-md hover:bg-gray-100 transition-colors text-[#6B7280]"
+              >
+                <Edit2 size={14} />
+              </button>
+              <button
+                onClick={deleteDriver}
+                disabled={loading}
+                className="p-1 rounded-md hover:bg-red-50 transition-colors text-[#EF4444]"
+              >
+                <Trash2 size={14} />
+              </button>
+            </>
+          )}
         </div>
         <div className="px-6 py-5 grid sm:grid-cols-2 gap-y-4 gap-x-12">
           <div className="flex items-start gap-3">
             <Phone size={15} className="text-[#9CA3AF] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-[#9CA3AF] mb-0.5">Phone</p>
-              <p className="text-sm text-[#111827] font-medium">
-                +1 458 7877 879
-              </p>
+              {editMode ? (
+                <input
+                  value={formValues.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="w-full h-11 border border-[#E5E7EB] rounded-lg px-3 text-sm text-[#111827] outline-none"
+                />
+              ) : (
+                <p className="text-sm text-[#111827] font-medium">
+                  {driver.phone ?? "—"}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-start gap-3">
             <MapPin size={15} className="text-[#9CA3AF] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-[#9CA3AF] mb-0.5">Address</p>
-              <p className="text-sm text-[#111827] font-medium">
-                1861 Bayonne Ave,
-                <br />
-                Manchester, NJ, 08759
-              </p>
+              {editMode ? (
+                <input
+                  value={formValues.address}
+                  onChange={(e) => handleInputChange("address", e.target.value)}
+                  className="w-full h-11 border border-[#E5E7EB] rounded-lg px-3 text-sm text-[#111827] outline-none"
+                />
+              ) : (
+                <p className="text-sm text-[#111827] font-medium">
+                  {driver.address ?? "—"}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-start gap-3">
             <Mail size={15} className="text-[#9CA3AF] mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs text-[#9CA3AF] mb-0.5">Email</p>
-              <p className="text-sm text-[#1D3461] font-medium">
-                perralt12@example.com
-              </p>
+              {editMode ? (
+                <input
+                  value={formValues.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className="w-full h-11 border border-[#E5E7EB] rounded-lg px-3 text-sm text-[#111827] outline-none"
+                />
+              ) : (
+                <p className="text-sm text-[#1D3461] font-medium">
+                  {driver.email ?? "—"}
+                </p>
+              )}
             </div>
           </div>
         </div>
+        {error && (
+          <div className="px-6 py-4 text-sm text-[#EF4444]">
+            {error}
+          </div>
+        )}
       </div>
 
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden mb-5">
@@ -967,3 +1231,4 @@ export default function DriverDetailPage() {
     </div>
   );
 }
+

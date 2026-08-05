@@ -1,20 +1,26 @@
 "use client";
 
 import { ArrowLeft, Upload, ImageIcon, Check, X } from "lucide-react";
-import { useState, useRef, DragEvent, ChangeEvent } from "react";
+import { useState, useRef, useEffect, DragEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 
 interface FormState {
   name: string;
+  contractorId: string;
   state: string;
   city: string;
   address: string;
   phone: string;
   email: string;
   appAccess: string;
+  fscAccess: string;
+  earningAccess: string;
   password: string;
   assignTruck: string;
   paymentType: string;
+  payPercent: string;
   rate: string;
   bank: string;
   accountNumber: string;
@@ -29,6 +35,12 @@ interface FormErrors {
   password?: string;
   accountNumber?: string;
   routingNumber?: string;
+  payPercent?: string;
+}
+
+interface TruckOption {
+  value: string;
+  label: string;
 }
 
 const STATE_OPTIONS = [
@@ -39,9 +51,14 @@ const STATE_OPTIONS = [
   "Illinois",
 ];
 const CITY_OPTIONS = ["Houston", "Dallas", "Austin", "San Antonio", "El Paso"];
-const ACCESS_OPTIONS = ["Enable", "Disable"];
-const TRUCK_OPTIONS = ["TX4578", "TX5682", "TX6820", "TX5973", "TX6891"];
-const PAYMENT_TYPES = ["Per Trip", "Per Ton", "Per Mile"];
+const ACCESS_OPTIONS = [
+  { value: "true", label: "Enable" },
+  { value: "false", label: "Disable" },
+];
+const PAYMENT_TYPE_OPTIONS = [
+  { value: "percent", label: "Percent" },
+  { value: "fixed", label: "Fixed" },
+];
 const RATE_OPTIONS = [
   "$80/trip",
   "$90/trip",
@@ -89,7 +106,7 @@ function TextInput({
   );
 }
 
-function SelectInput({
+function SelectInput<T extends string | { value: string; label: string }>({
   label,
   value,
   onChange,
@@ -99,7 +116,7 @@ function SelectInput({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: string[];
+  options: T[];
   error?: string;
 }) {
   return (
@@ -115,11 +132,15 @@ function SelectInput({
         <option value="" disabled>
           Select one
         </option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
+        {options.map((opt) => {
+          const optionValue = typeof opt === "string" ? opt : opt.value;
+          const optionLabel = typeof opt === "string" ? opt : opt.label;
+          return (
+            <option key={optionValue} value={optionValue}>
+              {optionLabel}
+            </option>
+          );
+        })}
       </select>
       <span className="pointer-events-none absolute right-3 top-[35px] text-[#9CA3AF]">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -251,17 +272,23 @@ function SectionCard({
 export default function AddDriver() {
   const navigate = useNavigate();
 
+  const { token, logout } = useAuth();
+
   const [form, setForm] = useState<FormState>({
     name: "",
+    contractorId: "",
     state: "",
     city: "",
     address: "",
     phone: "",
     email: "",
     appAccess: "",
+    fscAccess: "",
+    earningAccess: "",
     password: "",
     assignTruck: "",
     paymentType: "",
+    payPercent: "",
     rate: "",
     bank: "",
     accountNumber: "",
@@ -270,9 +297,14 @@ export default function AddDriver() {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
+  const [truckOptions, setTruckOptions] = useState<TruckOption[]>([]);
+  const [cdlFile, setCdlFile] = useState<File | null>(null);
+  const [medicalFile, setMedicalFile] = useState<File | null>(null);
   const [cdlPreview, setCdlPreview] = useState<string | null>(null);
   const [medicalPreview, setMedicalPreview] = useState<string | null>(null);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   function setField(key: keyof FormState) {
     return (value: string) => {
@@ -281,11 +313,57 @@ export default function AddDriver() {
     };
   }
 
+  useEffect(() => {
+    if (!token) return;
+
+    const controller = new AbortController();
+
+    const loadTruckOptions = async () => {
+      try {
+        const response = await fetch("https://65.1.152.16/api/trucks", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (await hasInvalidOrExpiredTokenError(response)) {
+          logout();
+          return;
+        }
+
+        const payload = await response.json().catch(() => null);
+        if (response.ok && Array.isArray(payload?.data)) {
+          setTruckOptions(
+            payload.data
+              .filter((truck: any): truck is { _id: string } => Boolean(truck?._id))
+              .map((truck: any) => ({
+                value: truck._id,
+                label: truck.unitNumber || truck.truckName || truck._id,
+              })),
+          );
+        } else {
+          setTruckOptions([]);
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          setTruckOptions([]);
+        }
+      }
+    };
+
+    void loadTruckOptions();
+    return () => controller.abort();
+  }, [logout, token]);
+
   function handleImageFile(type: "cdl" | "medical") {
     return (file: File) => {
       const url = URL.createObjectURL(file);
-      if (type === "cdl") setCdlPreview(url);
-      else setMedicalPreview(url);
+      if (type === "cdl") {
+        setCdlFile(file);
+        setCdlPreview(url);
+      } else {
+        setMedicalFile(file);
+        setMedicalPreview(url);
+      }
     };
   }
 
@@ -301,13 +379,100 @@ export default function AddDriver() {
       errs.accountNumber = "Account number is required.";
     if (!form.routingNumber.trim())
       errs.routingNumber = "Routing number is required.";
+    if (form.paymentType === "percent" && !form.payPercent.trim())
+      errs.payPercent = "Pay percentage is required.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit() {
-    if (validate()) {
+  async function handleSubmit() {
+    setApiError(null);
+    if (!validate()) return;
+    setSubmitting(true);
+
+const access = {
+  app: form.appAccess === "true",
+  fsc: form.fscAccess === "true",
+  earning: form.earningAccess === "true",
+};
+
+    const numericRate = Number(form.rate.replace(/[^0-9.]/g, "")) || 0;
+    const numericPayPercent = Number(form.payPercent) || 0;
+
+    const body = {
+      name: form.name,
+      contractorId: form.contractorId || undefined,
+      state: form.state,
+      city: form.city,
+      address: form.address,
+      phone: form.phone,
+      email: form.email,
+      access,
+      password: form.password,
+      truckId: form.assignTruck,
+      paymentType: form.paymentType,
+      payPercent: numericPayPercent,
+      rate: numericRate,
+      bankName: form.bank,
+      accountNumber: form.accountNumber,
+      routingNumber: form.routingNumber,
+      paymentMethod: form.paymentMethod,
+    } as Record<string, unknown>;
+
+    try {
+      let response: Response;
+      if (cdlFile || medicalFile) {
+        const formData = new FormData();
+        Object.entries(body).forEach(([key, value]) => {
+          if (value === undefined || value === null) return;
+          if (key === "access") {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+        });
+        if (cdlFile) formData.append("cdl", cdlFile);
+        if (medicalFile) formData.append("medicalCard", medicalFile);
+
+        response = await fetch("https://65.1.152.16/api/drivers", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        });
+      } else {
+        response = await fetch("https://65.1.152.16/api/drivers", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        });
+      }
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(
+          payload?.message || "Unable to add driver. Please try again.",
+        );
+      }
+
       setShowSuccessModal(true);
+    } catch (error) {
+      setApiError(
+        error instanceof Error
+          ? error.message
+          : "Unable to add driver. Please try again.",
+      );
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -379,6 +544,18 @@ export default function AddDriver() {
             onChange={setField("appAccess")}
             options={ACCESS_OPTIONS}
           />
+          <SelectInput
+            label="FSC Access"
+            value={form.fscAccess}
+            onChange={setField("fscAccess")}
+            options={ACCESS_OPTIONS}
+          />
+          <SelectInput
+            label="Earning Access"
+            value={form.earningAccess}
+            onChange={setField("earningAccess")}
+            options={ACCESS_OPTIONS}
+          />
           <TextInput
             label="Password"
             placeholder="Password"
@@ -391,18 +568,25 @@ export default function AddDriver() {
       </SectionCard>
 
       <SectionCard title="Work & Payment Details">
-        <div className="grid xl:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4">
-          <SelectInput
+        <div className="grid xl:grid-cols-4 md:grid-cols-2 grid-cols-1 gap-4">
+              <SelectInput
             label="Assign Truck"
             value={form.assignTruck}
             onChange={setField("assignTruck")}
-            options={TRUCK_OPTIONS}
+            options={truckOptions}
           />
           <SelectInput
             label="Payment Type"
             value={form.paymentType}
             onChange={setField("paymentType")}
-            options={PAYMENT_TYPES}
+            options={PAYMENT_TYPE_OPTIONS}
+          />
+          <TextInput
+            label="Pay %"
+            placeholder="Pay Percent"
+            value={form.payPercent}
+            onChange={setField("payPercent")}
+            error={errors.payPercent}
           />
           <SelectInput
             label="Rate"
@@ -461,12 +645,20 @@ export default function AddDriver() {
         </div>
       </SectionCard>
 
+      {apiError && (
+        <p className="text-sm text-red-500 mb-3">{apiError}</p>
+      )}
       <div className="flex justify-end mt-4">
         <button
           onClick={handleSubmit}
-          className="px-10 py-3 text-sm font-semibold text-white bg-[#1D3461] rounded-lg hover:bg-[#16213a] transition-colors"
+          disabled={submitting}
+          className={`px-10 py-3 text-sm font-semibold text-white rounded-lg transition-colors ${
+            submitting
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-[#1D3461] hover:bg-[#16213a]"
+          }`}
         >
-          Add Driver
+          {submitting ? "Adding..." : "Add Driver"}
         </button>
       </div>
 
