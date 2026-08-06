@@ -18,6 +18,9 @@ import {
   Eye,
   CalendarDays,
   MessageSquare,
+  MicOff,
+  Mic,
+  X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import DateRangeModal from "./DateRangeModal";
@@ -855,6 +858,10 @@ export default function DriverDetailPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
+  const [openDeactivateModal, setOpenDeactivateModal] = useState(false);
+  const [openCallModal, setOpenCallModal] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [formValues, setFormValues] = useState({
     phone: "",
     email: "",
@@ -862,56 +869,91 @@ export default function DriverDetailPage() {
   });
   const navigate = useNavigate();
 
+  const fetchDriver = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch(
+        `https://65.1.152.16/api/drivers/${driverId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          // signal: controller.signal,
+        },
+      );
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      const payload = (await response.json().catch(() => null)) as {
+        data?: DriverDetail;
+      } | null;
+
+      if (response.ok && payload?.data) {
+        setDriver(payload.data);
+        setFormValues({
+          phone: payload.data.phone ?? "",
+          email: payload.data.email ?? "",
+          address: payload.data.address ?? "",
+        });
+        setIsActive(payload.data.status !== "inactive");
+      } else {
+        setError("Unable to load driver details.");
+      }
+    } catch (fetchError) {
+      if (
+        !(
+          fetchError instanceof DOMException && fetchError.name === "AbortError"
+        )
+      ) {
+        setError("Unable to load driver details.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    fetchDriver();
+  }, [driverId, token]);
+
+  const handleDriverStatus = async () => {
     if (!token || !driverId) return;
 
-    const controller = new AbortController();
+    setProcessing(true);
 
-    const fetchDriver = async () => {
-      setLoading(true);
-      setError(null);
+    try {
+      const endpoint = isActive
+        ? `https://65.1.152.16/api/drivers/${driverId}/deactivate`
+        : `https://65.1.152.16/api/drivers/${driverId}/reactivate`;
 
-      try {
-        const response = await fetch(
-          `https://65.1.152.16/api/drivers/${driverId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: controller.signal,
-          },
-        );
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (await hasInvalidOrExpiredTokenError(response)) {
-          logout();
-          return;
-        }
-
-        const payload = (await response.json().catch(() => null)) as {
-          data?: DriverDetail;
-        } | null;
-
-        if (response.ok && payload?.data) {
-          setDriver(payload.data);
-          setFormValues({
-            phone: payload.data.phone ?? "",
-            email: payload.data.email ?? "",
-            address: payload.data.address ?? "",
-          });
-          setIsActive(payload.data.status !== "inactive");
-        } else {
-          setError("Unable to load driver details.");
-        }
-      } catch (fetchError) {
-        if (!(fetchError instanceof DOMException && fetchError.name === "AbortError")) {
-          setError("Unable to load driver details.");
-        }
-      } finally {
-        setLoading(false);
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
       }
-    };
 
-    void fetchDriver();
-    return () => controller.abort();
-  }, [driverId, logout, token]);
+      if (!response.ok) {
+        throw new Error("Unable to update status");
+      }
+
+      setOpenDeactivateModal(false);
+
+      await fetchDriver();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const handleInputChange = (field: keyof typeof formValues, value: string) => {
     setFormValues((prev) => ({ ...prev, [field]: value }));
@@ -924,18 +966,21 @@ export default function DriverDetailPage() {
     setError(null);
 
     try {
-      const response = await fetch(`https://65.1.152.16/api/drivers/${driverId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `https://65.1.152.16/api/drivers/${driverId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            phone: formValues.phone,
+            address: formValues.address,
+            email: formValues.email,
+          }),
         },
-        body: JSON.stringify({
-          phone: formValues.phone,
-          address: formValues.address,
-          email: formValues.email,
-        }),
-      });
+      );
 
       if (await hasInvalidOrExpiredTokenError(response)) {
         logout();
@@ -969,12 +1014,15 @@ export default function DriverDetailPage() {
     setError(null);
 
     try {
-      const response = await fetch(`https://65.1.152.16/api/drivers/${driverId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `https://65.1.152.16/api/drivers/${driverId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       if (await hasInvalidOrExpiredTokenError(response)) {
         logout();
@@ -993,9 +1041,18 @@ export default function DriverDetailPage() {
     }
   };
 
+    const handleSendMail = () => {
+    const subject = encodeURIComponent(`Hello ${driverName}`);
+    const body = encodeURIComponent(`Hi,`);
+
+    window.open(
+      `https://mail.google.com/mail/?view=cm&fs=1&to=${driver?.email ?? ""}&su=${subject}&body=${body}`,
+      "_blank",
+    );
+  };
+
   const driverName = driver?.name ?? "Driver Name";
-  const contractorLabel =
-    driver?.contractorId?.companyName ?? "New Jersey";
+  const contractorLabel = driver?.contractorId?.companyName ?? "New Jersey";
 
   if (loading && !driver) {
     return (
@@ -1015,7 +1072,7 @@ export default function DriverDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-[#F3F4F6] p-6 rounded-lg">
+      <div className="bg-[#F3F4F6] rounded-lg">
         <div className="flex items-center gap-4 mb-6">
           <button
             onClick={() => navigate(-1)}
@@ -1025,12 +1082,14 @@ export default function DriverDetailPage() {
             Back
           </button>
           <div>
-            <h1 className="text-[20px] font-bold text-[#111827]">Driver Details</h1>
+            <h1 className="text-[20px] font-bold text-[#111827]">
+              Driver Details
+            </h1>
             <p className="text-sm text-[#6B7280]">{contractorLabel}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
+        <div className="bg-white rounded-lg border border-[#E5E7EB]">
           <div className="px-6 py-5 flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-start gap-6">
               <div className="relative w-32 h-32 rounded-full overflow-hidden bg-[#E5E7EB] flex-shrink-0 border-4 border-[#F3F4F6] shadow">
@@ -1051,29 +1110,58 @@ export default function DriverDetailPage() {
                     <Check size={12} className="text-white stroke-[3]" />
                   </span>
                 </div>
-                <p className="text-sm text-[#374151] mt-2">
-                  {contractorLabel}
-                </p>
+                <p className="text-sm text-[#374151] mt-2">{contractorLabel}</p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
+              <button onClick={() => setOpenCallModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
                 <Phone size={14} /> Call
               </button>
-              <button className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
+              <button onClick={handleSendMail} className="flex items-center gap-2 px-5 py-2.5 bg-[#1D3461] text-white text-sm font-semibold rounded-lg hover:bg-[#16213a] transition-colors">
                 <MessageSquare size={14} /> Message
               </button>
+               <div className="relative">
               <button
-                onClick={() => setIsActive((p) => !p)}
-                className={`px-5 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                  isActive
-                    ? "bg-[#EF4444] text-white hover:bg-[#DC2626]"
-                    : "bg-[#22C55E] text-white hover:bg-[#16A34A]"
-                }`}
+                onClick={() => setOpenDeactivateModal(true)}
+                className={`flex justify-center items-center gap-2 ${
+                  isActive ? "bg-[#C76363] hover:bg-[#a04e4e]" : "bg-[#03C95A]"
+                } text-white text-sm font-medium h-9 sm:h-10 px-2 xl:w-[186px] rounded-[5px] transition-colors whitespace-nowrap cursor-pointer`}
               >
                 {isActive ? "Deactivate Account" : "Activate Account"}
               </button>
+
+              {openDeactivateModal && (
+                <div className="absolute top-[calc(100%+12px)] right-0 md:w-[400px] w-[280px] bg-white rounded-lg shadow-xl border border-gray-100 p-4 z-50">
+                  <h3 className="text-[15px] font-semibold text-center text-black mb-2">
+                    Are you sure want to {isActive ? "deactivate" : "activate"}{" "}
+                    the account
+                  </h3>
+                  <p className="text-[11px] text-center text-black leading-relaxed mb-4">
+                    Lorem Ipsum is simply dummy text of the printing and
+                    typesetting industry. Lorem Ipsum has been the industry's
+                    standard dummy text ever since the 1500s
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                           disabled={processing}
+                          onClick={handleDriverStatus}
+                      className="flex-1 bg-[#03C95A] hover:bg-[#008f35] text-white py-2 rounded-md font-medium transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {processing ? "Please wait..." : "Yes"}
+                    </button>
+                    <button
+                      onClick={() => setOpenDeactivateModal(false)}
+                      className="flex-1 bg-[#E30000] hover:bg-[#c20000] text-white py-2 rounded-md font-medium transition-colors cursor-pointer"
+                    >
+                      No
+                    </button>
+                  </div>
+                  {/* Tooltip Arrow */}
+                  <div className="absolute -bottom-2 right-[90px] w-4 h-4 bg-white transform rotate-45 border-b border-r border-gray-100"></div>
+                </div>
+              )}
+            </div>
             </div>
           </div>
 
@@ -1196,9 +1284,7 @@ export default function DriverDetailPage() {
           </div>
         </div>
         {error && (
-          <div className="px-6 py-4 text-sm text-[#EF4444]">
-            {error}
-          </div>
+          <div className="px-6 py-4 text-sm text-[#EF4444]">{error}</div>
         )}
       </div>
 
@@ -1227,8 +1313,73 @@ export default function DriverDetailPage() {
         <div className="p-5">
           {activeTab === "Tickets" ? <TicketsTab /> : <StatementTab />}
         </div>
+
+           {openCallModal && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-[9998]"
+            onClick={() => setOpenCallModal(false)}
+          />
+
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="w-full max-w-[600px] rounded-xl bg-[#162341] overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between p-5">
+                <h2 className="text-[#87C8E8] text-[20px] font-semibold">
+                  TICKET<span className="text-[#fff]">TRAXX</span>
+                </h2>
+
+                <button
+                  className="cursor-pointer"
+                  onClick={() => setOpenCallModal(false)}
+                >
+                  <X size={28} className="text-white" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex flex-col items-center pt-10 pb-5 px-5">
+                <img
+                  src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                    driverName,
+                  )}&background=1D3461&color=fff&size=128`}
+                  alt={driverName}
+                  className="w-[100px] h-[100px] rounded-full border-4 border-white object-cover"
+                />
+
+                <h2 className="mt-5 text-white text-[24px] font-bold">
+                  {driverName}
+                </h2>
+
+                <p className="text-white text-[16px] mt-2">{driver.phone ?? "—"}</p>
+
+                <p className="text-white text-[16px] mt-2">Voice Call</p>
+
+                {/* Mute */}
+                <button
+                  onClick={() => setIsMuted((prev) => !prev)}
+                  className="mt-10 w-[48px] h-[48px] cursor-pointer rounded-full bg-[#455271] flex items-center justify-center"
+                >
+                  {isMuted ? (
+                    <MicOff size={22} color="white" />
+                  ) : (
+                    <Mic size={22} color="white" />
+                  )}
+                </button>
+
+                {/* End Call */}
+                <button
+                  onClick={() => setOpenCallModal(false)}
+                  className="mt-10 w-full h-[54px] cursor-pointer rounded-full bg-[#FF140A] flex items-center justify-center hover:bg-red-700 transition"
+                >
+                  <Phone size={24} color="white" className="rotate-[135deg]" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
       </div>
     </div>
   );
 }
-
