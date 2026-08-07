@@ -1,36 +1,110 @@
 import { X, ChevronDown, Calendar } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DateRangeModal from "./DateRangeModal";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
+import { useAuth } from "../context/AuthContext";
+import { hasInvalidOrExpiredTokenError } from "../utils/api";
 
 interface AssignDriverModalProps {
   open: boolean;
   onClose: () => void;
+  truckId?: string | null;
   onAssign?: (data: { driver: string; assignDate: string }) => void;
 }
 
 export const AssignDriverModal = ({
   open,
   onClose,
+  truckId,
   onAssign,
 }: AssignDriverModalProps) => {
+  const { token, logout } = useAuth();
   const [driver, setDriver] = useState("");
   const [assignDate, setAssignDate] = useState("");
-  console.log(setAssignDate);
+  const [drivers, setDrivers] = useState<Array<{ value: string; label: string }>>([]);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [datePickerOpen, setDatePickerOpen] = useState<"start" | "end" | null>(
-    null,
-  );
+  const [datePickerOpen, setDatePickerOpen] = useState<"start" | "end" | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !token) return;
+    const controller = new AbortController();
+
+    const loadDrivers = async () => {
+      try {
+        const res = await fetch("https://65.1.152.16/api/drivers", {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
+        });
+
+        if (await hasInvalidOrExpiredTokenError(res)) {
+          logout();
+          return;
+        }
+
+        const payload = await res.json().catch(() => null);
+        if (res.ok && Array.isArray(payload?.data)) {
+          setDrivers(
+            payload.data
+              .filter((d: any) => d?._id)
+              .map((d: any) => ({ value: d._id, label: d.name || "N/A" })),
+          );
+        } else {
+          setDrivers([]);
+        }
+      } catch (err) {
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          setDrivers([]);
+        }
+      }
+    };
+
+    void loadDrivers();
+    return () => controller.abort();
+  }, [open, token, logout]);
+
+  useEffect(() => {
+    if (!dateRange?.from) return;
+    setAssignDate(format(dateRange.from, "yyyy-MM-dd"));
+  }, [dateRange]);
+
   if (!open) return null;
 
-  const handleAssign = () => {
-    onAssign?.({
-      driver,
-      assignDate,
-    });
+  const handleAssign = async () => {
+    if (!truckId || !token || !driver) return;
+    setLoading(true);
 
-    onClose();
+    try {
+      const body = {
+        driverId: driver,
+        assignedFromDate: assignDate || (dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : undefined),
+      };
+
+      const response = await fetch(
+        `https://65.1.152.16/api/trucks/${encodeURIComponent(truckId)}/assign-driver`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+        },
+      );
+
+      if (await hasInvalidOrExpiredTokenError(response)) {
+        logout();
+        return;
+      }
+
+      if (!response.ok) return;
+
+      onAssign?.({ driver, assignDate: body.assignedFromDate || "" });
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -54,9 +128,9 @@ export const AssignDriverModal = ({
               />
 
               <div>
-                <h3 className="text-sm font-medium">Unit No : 215</h3>
+                <h3 className="text-sm font-medium">Unit No : {truckId ?? "N/A"}</h3>
 
-                <p className="text-base text-gray-500">Plate: TX-78A23</p>
+                <p className="text-base text-gray-500">Plate: N/A</p>
               </div>
             </div>
 
@@ -66,9 +140,7 @@ export const AssignDriverModal = ({
           </div>
 
           <div className="mt-6">
-            <label className="block text-sm font-semibold mb-2">
-              Select Driver
-            </label>
+            <label className="block text-sm font-semibold mb-2">Select Driver</label>
 
             <div className="relative w-full">
               <select
@@ -77,9 +149,11 @@ export const AssignDriverModal = ({
                 className="w-full border rounded-lg px-4 py-3 appearance-none text-sm outline-none"
               >
                 <option value="">Select one</option>
-                <option value="John Miller">John Miller</option>
-                <option value="Robert Davies">Robert Davies</option>
-                <option value="Maria Gomez">Maria Gomez</option>
+                {drivers.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
               </select>
 
               <ChevronDown
@@ -90,9 +164,7 @@ export const AssignDriverModal = ({
           </div>
 
           <div className="mt-6">
-            <label className="block text-sm font-semibold mb-2">
-              Assign From Date
-            </label>
+            <label className="block text-sm font-semibold mb-2">Assign From Date</label>
 
             <button
               onClick={() => setDatePickerOpen("start")}
@@ -101,14 +173,8 @@ export const AssignDriverModal = ({
               <div className="flex items-center gap-3">
                 <Calendar size={20} className="text-[#6B7280]" />
 
-                <span
-                  className={`text-sm ${
-                    dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"
-                  }`}
-                >
-                  {dateRange?.from
-                    ? format(dateRange.from, "MM/dd/yyyy")
-                    : "mm/dd/yyyy"}
+                <span className={`text-sm ${dateRange?.from ? "text-[#111827]" : "text-[#9CA3AF]"}`}>
+                  {dateRange?.from ? format(dateRange.from, "MM/dd/yyyy") : "mm/dd/yyyy"}
                 </span>
               </div>
             </button>
@@ -130,9 +196,10 @@ export const AssignDriverModal = ({
         <div className="border-t px-4 py-3">
           <button
             onClick={handleAssign}
-            className="bg-[#1F3B77] hover:bg-[#18305f] text-white px-5 py-3 rounded-lg text-sm font-medium"
+            disabled={loading}
+            className="bg-[#1F3B77] hover:bg-[#18305f] text-white px-5 py-3 rounded-lg text-sm font-medium disabled:opacity-60"
           >
-            Assign Driver
+            {loading ? "Assigning..." : "Assign Driver"}
           </button>
         </div>
       </div>

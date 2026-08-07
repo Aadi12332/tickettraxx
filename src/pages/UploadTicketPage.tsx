@@ -3,24 +3,17 @@
 import { ChevronDown, RefreshCw, Upload, ImageIcon } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-
-const UPLOAD_FOR_OPTIONS = [
-  "Myself",
-  "John Smith - 601",
-  "Henry Cavil - 608",
-  "Tom Holland - 603",
-  "Peter Kevin - 607",
-  "Andrew Brooks - 801",
-];
+import { useAuth } from "../context/AuthContext";
 
 
 function UploadForDropdown({
   value,
   onChange,
+  options,
 }: {
   value: string;
-  onChange: (v: string) => void;
+  onChange: (label: string, id: string) => void;
+  options: { label: string; id: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -34,7 +27,7 @@ function UploadForDropdown({
   }, []);
 
   return (
-    <div ref={ref} className="relative w-[220px]">
+    <div ref={ref} className="relative w-[270px]">
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full bg-white border border-[#E5E7EB] rounded-lg px-4 pt-2 pb-2.5 text-left flex items-end justify-between gap-2 hover:border-[#D1D5DB] transition-colors"
@@ -52,18 +45,18 @@ function UploadForDropdown({
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-full bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1 overflow-hidden">
-          {UPLOAD_FOR_OPTIONS.map((opt) => (
+        <div className="absolute left-0 top-full mt-1 w-full bg-white border border-[#E5E7EB] rounded-lg shadow-lg z-50 py-1 overflow-auto max-h-[200px]">
+          {options.map((opt) => (
             <button
-              key={opt}
-              onClick={() => { onChange(opt); setOpen(false); }}
+              key={opt.id}
+              onClick={() => { onChange(opt.label, opt.id); setOpen(false); }}
               className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                value === opt
+                value === opt.label
                   ? "bg-gray-50 text-[#111827] font-medium"
                   : "text-[#374151] hover:bg-gray-50"
               }`}
             >
-              {opt}
+              {opt.label}
             </button>
           ))}
         </div>
@@ -77,13 +70,57 @@ export default function UploadTicketPage() {
   const [uploadFor, setUploadFor] = useState("");
   const navigate = useNavigate();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [driverId, setDriverId] = useState<string>("");
+  const { token } = useAuth();
+  const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [driversMap, setDriversMap] = useState<Record<string, string>>({});
+  const [driverOptions, setDriverOptions] = useState<{label:string;id:string}[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    let canceled = false;
+    async function loadDrivers() {
+      try {
+        const res = await fetch("https://65.1.152.16/api/drivers", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const payload = await res.json().catch(() => null) as any;
+        const items = Array.isArray(payload?.data) ? payload.data : payload?.data ?? payload ?? [];
+        const map: Record<string, string> = {};
+        const opts: {label:string;id:string}[] = [];
+        items.forEach((d: any) => {
+          const name = d?.name ?? "";
+          const id = d?._id ?? d?.id ?? "";
+          if (name) {
+            map[name] = id;
+            opts.push({ label: `${name}${d?.driverCode ? ' - ' + d.driverCode : ''}`, id });
+          }
+        });
+        if (!canceled) {
+          setDriversMap(map);
+          setDriverOptions(opts);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    loadDrivers();
+    return () => { canceled = true; };
+  }, [token]);
+
 
   function handleFile(file: File) {
     if (!file.type.startsWith("image/")) return;
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
+    setSelectedFile(file);
   }
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -107,10 +144,51 @@ export default function UploadTicketPage() {
     setIsDragging(false);
   }
 
-  function handleExtract() {
-    if (!previewUrl) return;
-    navigate("/dashboard/tickets-extraction");
+const handleExtract = async () => {
+  if (!selectedFile) {
+    alert("Please select a file to upload.");
+    return;
   }
+
+  if (!driverId) {
+    alert("Please select a driver.");
+    return;
+  }
+
+  if (!token) {
+    alert("Not authenticated.");
+    return;
+  }
+
+  setIsUploading(true);
+
+  try {
+    const fd = new FormData();
+    fd.append("file", selectedFile);
+    fd.append("driverId", driverId);
+
+    const res = await fetch("https://65.1.152.16/api/tickets/upload", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: fd,
+    });
+
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || "Upload failed");
+    }
+
+    // Upload successful
+    navigate("/dashboard/tickets-extraction");
+
+  } catch (err: any) {
+    alert(err.message || "Upload failed");
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   return (
     <div className="bg-[#F3F4F6]">
@@ -126,7 +204,10 @@ export default function UploadTicketPage() {
         </button>
       </div>
       <div className="mb-5">
-        <UploadForDropdown value={uploadFor} onChange={setUploadFor} />
+        <UploadForDropdown value={uploadFor} onChange={(label,id)=>{ setUploadFor(label); setDriverId(id); }} options={driverOptions.length ? driverOptions : [
+          { label: "Myself", id: "" },
+          { label: "John Smith - 601", id: "" },
+        ]} />
       </div>
       <div className="bg-white rounded-lg border border-[#E5E7EB] overflow-hidden">
         <div className="px-6 py-4 border-b border-[#E5E7EB]">
@@ -176,17 +257,19 @@ export default function UploadTicketPage() {
               </div>
             </div>
 
-            <button
-              onClick={handleExtract}
-              disabled={!previewUrl}
-              className={`mt-5 px-8 py-3 text-sm font-semibold rounded-lg sm:block hidden transition-colors ${
-                previewUrl
-                  ? "bg-[#1D3461] text-white hover:bg-[#16213a]"
-                  : "bg-[#1D3461]/60 text-white/70 cursor-not-allowed"
-              }`}
-            >
-              Extract
-            </button>
+            <div className="mt-5 flex items-center gap-3">
+              <button
+                onClick={handleExtract}
+                disabled={!selectedFile || !driverId || isUploading}
+                className={`px-6 py-3 text-sm font-semibold rounded-lg sm:block hidden transition-colors ${
+                  previewUrl
+                    ? "bg-[#1D3461] text-white hover:bg-[#16213a]"
+                    : "bg-[#1D3461]/60 text-white/70 cursor-not-allowed"
+                }`}
+              >
+                {isUploading ? "Uploading..." : "Extract"}
+              </button>
+            </div>
           </div>
 
           <div className="sm:w-[290px] flex-shrink-0">
@@ -208,14 +291,14 @@ export default function UploadTicketPage() {
           </div>
            <button
               onClick={handleExtract}
-              disabled={!previewUrl}
+              disabled={!selectedFile || !driverId || isUploading}
               className={`mt-5 px-8 py-3 text-sm font-semibold rounded-lg sm:hidden transition-colors ${
                 previewUrl
                   ? "bg-[#1D3461] text-white hover:bg-[#16213a]"
                   : "bg-[#1D3461]/60 text-white/70 cursor-not-allowed"
               }`}
             >
-              Extract
+              {isUploading ? "Uploading..." : "Extract"}
             </button>
         </div>
       </div>

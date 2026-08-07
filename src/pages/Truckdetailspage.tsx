@@ -388,8 +388,12 @@ function ActionsMenu({ rowId, active, onStatusChange }: { rowId: string; active:
 
       <AssignDriverModal
         open={assignDriverOpen}
+        truckId={rowId}
         onClose={() => setAssignDriverOpen(false)}
         onAssign={(data) => {
+          setSuccessType("Driver Assigned");
+          setOpen(false);
+          setTimeout(() => setSuccessType(null), 3000);
           console.log("Assigned:", data);
         }}
       />
