@@ -79,7 +79,7 @@ export default function UploadTicketPage() {
 
   const [driversMap, setDriversMap] = useState<Record<string, string>>({});
   const [driverOptions, setDriverOptions] = useState<{label:string;id:string}[]>([]);
-
+console.log({driversMap})
   useEffect(() => {
     if (!token) return;
 
